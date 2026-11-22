@@ -31,15 +31,15 @@
 
 ## Review Focus
 
-1. **Cevap anahtarında Windows satır sonu (CRLF), boş satır, fazla boşluk ya da küçük harf şık** (`27: c`): kabul edilir. → Görev 1'de test var.
-2. **Model istenen bir numarayı döndürmez:** Soru "eksik" gerekçesiyle incelemeye düşer, sessizce kaybolmaz. → Görev 2'de test var.
-3. **Model istenmeyen bir numarayı ya da aynı numarayı iki kez döndürür:** İstenmeyen numara yok sayılır, ikinci kopya da yok sayılır. → Görev 2'de test var.
-4. **Kör çözüm bir numarayı cevapsız bırakır:** Uyuşmazlık sayılır ve soru incelemeye düşer. → Görev 2'de test var.
-5. **Model çağrısı hata verir ya da beklenmeyen bir yapı döner:** Komut anlaşılır bir hata mesajıyla durur ve hiçbir dosya yazmaz. → Çekirdeğin fırlattığı Görev 2'de test ediliyor. Dosya yazılmaması ise yapıdan geliyor: Görev 3'te yazma bütün çağrılar bittikten sonra yapılıyor. Bunun otomatik testi yok, gözden geçirmede kontrol edilecek.
+1. **Cevap anahtarında Windows satır sonu (CRLF), boş satır, fazla boşluk ya da küçük harf şık** (`27: c`): kabul edilir. → Task 1'de test var.
+2. **Model istenen bir numarayı döndürmez:** Soru "eksik" gerekçesiyle incelemeye düşer, sessizce kaybolmaz. → Task 2'de test var.
+3. **Model istenmeyen bir numarayı ya da aynı numarayı iki kez döndürür:** İstenmeyen numara yok sayılır, ikinci kopya da yok sayılır. → Task 2'de test var.
+4. **Kör çözüm bir numarayı cevapsız bırakır:** Uyuşmazlık sayılır ve soru incelemeye düşer. → Task 2'de test var.
+5. **Model çağrısı hata verir ya da beklenmeyen bir yapı döner:** Komut anlaşılır bir hata mesajıyla durur ve hiçbir dosya yazmaz. → Çekirdeğin fırlattığı Task 2'de test ediliyor. Dosya yazılmaması ise yapıdan geliyor: Task 3'te yazma bütün çağrılar bittikten sonra yapılıyor. Bunun otomatik testi yok, gözden geçirmede kontrol edilecek.
 
 ---
 
-### Görev 1: Cevap anahtarı ayrıştırıcı
+### Task 1: Cevap anahtarı ayrıştırıcı
 
 **Files:**
 - Create: `apps/web/lib/content/generate/answer-key.ts`
@@ -92,7 +92,7 @@ git commit -m "Soru hattı: cevap anahtarı ayrıştırıcı"
 
 ---
 
-### Görev 2: Çekirdek `generateQuestions`
+### Task 2: Çekirdek `generateQuestions`
 
 **Files:**
 - Modify: `apps/web/lib/content/schema.ts`. `Question` nesnesi iki parçaya ayrılır:
@@ -105,7 +105,7 @@ git commit -m "Soru hattı: cevap anahtarı ayrıştırıcı"
 - Test: `apps/web/lib/content/generate/generate.test.ts`
 
 **Interfaces:**
-- Consumes: Görev 1'deki `parseAnswerKey` sonucu (`Map<number, OptionKey>`).
+- Consumes: Task 1'deki `parseAnswerKey` sonucu (`Map<number, OptionKey>`).
 - Produces (`client.ts`):
   ```ts
   export type JsonRequest = { prompt: string; pdf?: Uint8Array; schema: Record<string, unknown> };
@@ -236,7 +236,7 @@ git commit -m "Soru hattı: generateQuestions çekirdeği (analiz + şema + kör
 
 ---
 
-### Görev 3: Gemini bağlantısı ve `content:generate` komutu
+### Task 3: Gemini bağlantısı ve `content:generate` komutu
 
 **Files:**
 - Create: `apps/web/lib/content/generate/gemini.ts`
@@ -255,8 +255,8 @@ git commit -m "Soru hattı: generateQuestions çekirdeği (analiz + şema + kör
 
 **Interfaces:**
 - Consumes:
-  - Görev 1'deki `parseAnswerKey`
-  - Görev 2'deki `generateQuestions`, `GENERATORS`, `ModelClient`, `GenerateResult`
+  - Task 1'deki `parseAnswerKey`
+  - Task 2'deki `generateQuestions`, `GENERATORS`, `ModelClient`, `GenerateResult`
   - Mevcut `contentRoot()` (`lib/content/load.ts`)
 - Produces:
   - `createGeminiClient(apiKey: string, model: string): ModelClient`
@@ -301,7 +301,7 @@ Expected: PASS
   - JSON çıktısı, yapılandırılmış çıktı ayarlarıyla `schema` üzerinden istenir.
   - Dönen metin `JSON.parse` ile çözülür.
   - SDK alan adları ve varsayılan model adı güncel Gemini belgelerinden doğrulanır. Varsayılan model, kaliteli bir PDF/akıl yürütme modeli olur. `GEMINI_MODEL` ortam değişkeni bunu geçersiz kılar.
-  - Bu dosya birim testine girmez. Görev 4'te gerçek bir çağrıyla denenir.
+  - Bu dosya birim testine girmez. Task 4'te gerçek bir çağrıyla denenir.
 
 - [ ] **Step 5: `scripts/generate-content.ts` komutunu yaz.** Sırası:
   1. `dotenv` ile `.env.local` yüklenir. `import-content.ts` dosyasıyla aynı yöntem kullanılır: önce dotenv yüklenir, sonra dinamik import yapılır.
@@ -333,7 +333,7 @@ git commit -m "Soru hattı: Gemini istemcisi ve content:generate komutu"
 
 ---
 
-### Görev 4: Kabul — 2021-yds-1 ile uçtan uca deneme (elle, kullanıcıyla)
+### Task 4: Kabul — 2021-yds-1 ile uçtan uca deneme (elle, kullanıcıyla)
 
 **Ön koşullar:**
 - Kullanıcı `data/raw/2021-yds-1.pdf` ve `data/raw/2021-yds-1-anahtar.txt` dosyalarını koyar.
