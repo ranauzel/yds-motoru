@@ -20,8 +20,10 @@ Hattı şimdilik proje sahibi kendi bilgisayarında, kendi Gemini anahtarıyla k
 ## Komut
 
 ```
-pnpm content:generate <sinav.pdf> --anahtar <cevaplar.txt> --sinav <id> [--ad "<sınav adı>"] [--tarih YYYY-MM-DD]
+pnpm content:generate <sinav.pdf> --anahtar <cevaplar.txt> --sinav <id> --tarih YYYY-MM-DD [--ad "<sınav adı>"]
 ```
+
+`--tarih` zorunlu, çünkü `content:import` bu değeri veritabanındaki `NOT NULL` tanımlı `exam_date` kolonuna yazıyor.
 
 - **Cevap anahtarı:** Bir metin dosyası, her satırda `numara: şık` yazılı (örn. `27: C`).
   - Anahtarda yer almayan bir numara (örneğin iptal edilmiş bir soru) uyarı verilerek atlanır.
