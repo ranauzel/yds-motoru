@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+/* Tasarım belirteçleri — pratik sayfasıyla aynı dil. Türkçe UI sans, İngilizce metin serif. */
+:root {
+  --bg: #f7f6f2; --surface: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --border: #e3e1da;
+  --accent: #2f5bd3; --accent-soft: #e8eefc; --ok: #1f8a4c; --ok-soft: #e4f4ea;
+  --warn: #b26a00; --warn-soft: #fdf1dc; --conj: #6b3fd1; --conj-soft: #efe8fd;
+  --ref: #0b7a83; --ref-soft: #e1f4f5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141416; --surface: #1d1d21; --text: #ececef; --muted: #9a9aa3; --border: #2e2e34;
+    --accent: #7c9cff; --accent-soft: #1f2840; --ok: #4fc483; --ok-soft: #16301f;
+    --warn: #f0a83a; --warn-soft: #33260f; --conj: #b49bff; --conj-soft: #2a2140;
+    --ref: #4fd0d9; --ref-soft: #123033;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-conj: var(--conj);
+  --color-conj-soft: var(--conj-soft);
+  --color-ref: var(--ref);
+  --color-ref-soft: var(--ref-soft);
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+}

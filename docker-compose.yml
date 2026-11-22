@@ -1,0 +1,23 @@
+# Kendi bilgisayarında çalıştırmak için (Neon yerine yerel Postgres).
+#   docker compose up -d db
+#   apps/web/.env.local → DATABASE_URL=postgresql://yds:yds@localhost:5432/yds
+# Not: Uygulamanın kendisi için (web servisi) Dockerfile, pratik ekranı tamamlanınca eklenecek.
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: yds
+      POSTGRES_PASSWORD: yds
+      POSTGRES_DB: yds
+    ports:
+      - "127.0.0.1:5432:5432"   # sadece bu bilgisayardan erişilir
+    volumes:
+      - yds-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U yds"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  yds-db:

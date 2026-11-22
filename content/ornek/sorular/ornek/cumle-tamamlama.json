@@ -1,0 +1,41 @@
+{
+  "schema_version": "0.1",
+  "exam": { "id": "ornek", "name": "Örnek (ÖSYM sorusu değildir)", "date": "2026-01-01" },
+  "questions": [
+    {
+      "id": "ornek-q1",
+      "number": 1,
+      "type": "cumle_tamamlama",
+      "topic": "zitlik",
+      "sub_topic": "Zıtlık bağlacı (although)",
+      "difficulty": 1,
+      "stem": "Although the new bridge was finished ahead of schedule, ----.",
+      "stem_tr": "Yeni köprü planlanandan önce bitirilmiş olsa da, ----.",
+      "stem_chunks": [
+        { "en": "Although", "tr": "-se de", "tag": "conj", "label": "zıtlık", "sign": "↔" },
+        { "en": "the new bridge was finished ahead of schedule,", "tr": "yeni köprü planlanandan önce bitirildi" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "Although'dan sonra beklenenin tersi gelmeli: erken bitti ama yine de bir sorun var.",
+      "answer": "B",
+      "options": [
+        { "key": "A", "text": "the workers were praised for their speed", "text_tr": "işçiler hızları için övüldü", "traps": ["T3"], "explanation": "Erken bitmenin doğal sonucu; zıtlık yok." },
+        { "key": "B", "text": "it remained closed to traffic for another month", "text_tr": "bir ay daha trafiğe kapalı kaldı", "traps": [], "explanation": "Erken bitti ama yine de açılmadı: beklenenin tersi, zıtlık doğru." },
+        { "key": "C", "text": "the city will build another bridge next year", "text_tr": "şehir gelecek yıl bir köprü daha yapacak", "traps": ["T5"], "explanation": "Konuyla ilgili ama ilk cümleyle zıtlık kurmuyor." },
+        { "key": "D", "text": "it had been completed on time", "text_tr": "zamanında tamamlanmıştı", "traps": ["T1"], "explanation": "İlk cümleyi tekrar ediyor." },
+        { "key": "E", "text": "so many people use it every day", "text_tr": "o yüzden pek çok kişi onu her gün kullanıyor", "traps": ["T11"], "explanation": "\"so\" ile başlıyor; ana cümle olarak yapı bozuk." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: Although → zıtlık.",
+        "İlk yarı olumlu: köprü erken bitti.",
+        "Boşluğa beklenmeyen, olumsuz bir sonuç gelmeli: B."
+      ],
+      "golden_rule": "Although gördüğünde boşluğa ilk yarıdan beklenenin tersini koy.",
+      "structure": "[Although + yan cümle], [ana cümle].",
+      "vocab": [
+        { "word": "ahead of schedule", "tr": "planlanandan önce", "warmup": true, "context": "finished ahead of schedule" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    }
+  ]
+}
