@@ -16,6 +16,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  isAnonymous: boolean("is_anonymous").default(false), // misafir (demo) hesabı
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });

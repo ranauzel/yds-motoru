@@ -9,10 +9,10 @@ describe("toQuestionRows", () => {
   it("her soruyu sınav bilgisiyle bir satıra çevirir, tüm soruyu data'da saklar", async () => {
     const files = await loadQuestionFiles(EXAMPLE);
     const rows = toQuestionRows(files);
-    expect(rows).toHaveLength(1);
+    expect(rows).toHaveLength(10);
     const r = rows[0];
     expect(r).toMatchObject({
-      id: "ornek-q1", examId: "ornek", examName: "Örnek (ÖSYM sorusu değildir)",
+      id: "ornek-q1", examId: "ornek", examName: "Örnek sorular (ÖSYM sorusu değildir)",
       examDate: "2026-01-01", number: 1, type: "cumle_tamamlama", topic: "zitlik", status: "reviewed",
     });
     expect(r.data).toEqual(files[0].questions[0]);

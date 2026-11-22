@@ -4,6 +4,8 @@ import { startSession } from "@/features/session/actions";
 import { latestUnfinishedSession } from "@/features/session/server";
 import { getAllQuestions } from "@/lib/content/repo";
 import { requireUser } from "@/lib/session";
+import { guestEnabled } from "@/lib/guest";
+import { DemoNote } from "./giris/login-screen";
 import { SignOutButton } from "./sign-out-button";
 
 // Statik kabuk anında gelir; oturum ve içerik okuyan kısımlar <Suspense> arkasında akar
@@ -27,6 +29,7 @@ export default function TodayPage() {
           <SessionSummary />
         </Suspense>
       </section>
+      {guestEnabled() && <DemoNote />}
     </main>
   );
 }

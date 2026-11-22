@@ -15,5 +15,5 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // giriş sayfası, auth API'si ve statik dosyalar hariç her şey korunur
-  matcher: ["/((?!giris|api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
+  matcher: ["/((?!giris|api/auth|api/cron|_next/static|_next/image|favicon.ico|.*\\.(?:png|svg|ico|webmanifest)$).*)"],
 };

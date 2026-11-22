@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1",
-  "exam": { "id": "ornek", "name": "Örnek (ÖSYM sorusu değildir)", "date": "2026-01-01" },
+  "exam": { "id": "ornek", "name": "Örnek sorular (ÖSYM sorusu değildir)", "date": "2026-01-01" },
   "questions": [
     {
       "id": "ornek-q1",
@@ -34,6 +34,341 @@
       "structure": "[Although + yan cümle], [ana cümle].",
       "vocab": [
         { "word": "ahead of schedule", "tr": "planlanandan önce", "warmup": true, "context": "finished ahead of schedule" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q2",
+      "number": 2,
+      "type": "cumle_tamamlama",
+      "topic": "kosul",
+      "sub_topic": "Olumsuz koşul (unless)",
+      "difficulty": 2,
+      "stem": "Unless the old water pipes in the city centre are replaced soon, ----.",
+      "stem_tr": "Şehir merkezindeki eski su boruları yakında değiştirilmezse, ----.",
+      "stem_chunks": [
+        { "en": "Unless", "tr": "-mezse", "tag": "conj", "label": "koşul (olumsuz)", "sign": "→" },
+        { "en": "the old water pipes in the city centre are replaced soon,", "tr": "şehir merkezindeki eski su boruları yakında değiştirilir" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "Unless = if not. Borular değiştirilmezse ne olur? Geleceğe dönük olumsuz bir sonuç gelmeli.",
+      "answer": "D",
+      "options": [
+        { "key": "A", "text": "residents have been complaining about the taste of the water", "text_tr": "sakinler suyun tadından şikâyet ediyor", "traps": ["T2"], "explanation": "Present perfect continuous; koşulun gelecekteki sonucunu vermiyor." },
+        { "key": "B", "text": "the municipality replaced them last summer", "text_tr": "belediye onları geçen yaz değiştirdi", "traps": ["T2"], "explanation": "Geçmiş zaman; gerçek koşul cümlesinin sonucu geçmişte olamaz." },
+        { "key": "C", "text": "the new pipes will last for at least fifty years", "text_tr": "yeni borular en az elli yıl dayanacak", "traps": ["T9"], "explanation": "Unless'ın olumsuz anlamını kaçırıyor; borular değişmezse 'yeni boru' olmaz." },
+        { "key": "D", "text": "frequent leaks will continue to waste large amounts of water", "text_tr": "sık sızıntılar büyük miktarda suyu boşa harcamaya devam edecek", "traps": [], "explanation": "Değiştirilmezse sızıntılar sürer: mantıklı, gelecek zamanlı sonuç." },
+        { "key": "E", "text": "they would have prevented the flooding", "text_tr": "seli önlemiş olurlardı", "traps": ["T2", "T11"], "explanation": "Üçüncü tip koşul yapısı; present tense'li yan cümleyle uyuşmuyor." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: Unless → 'eğer ... değilse'.",
+        "Yan cümle present (are replaced) → ana cümle will + V olmalı.",
+        "Zamanı uyan B, C, D'den anlamca uygun olan: değiştirilmezse sızıntı sürer → D."
+      ],
+      "golden_rule": "Unless'ı 'if not' diye oku; present yan cümle varsa ana cümlede will ara.",
+      "structure": "[Unless + present], [will + V].",
+      "vocab": [
+        { "word": "replace", "tr": "değiştirmek, yenisiyle değiştirmek", "warmup": true, "context": "the old water pipes ... are replaced soon" },
+        { "word": "leak", "tr": "sızıntı" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q3",
+      "number": 3,
+      "type": "cumle_tamamlama",
+      "topic": "neden_sonuc",
+      "sub_topic": "Neden bağlacı (since)",
+      "difficulty": 2,
+      "stem": "----, since most of its funding came from private donors rather than the government.",
+      "stem_tr": "Fonlarının çoğu devletten değil özel bağışçılardan geldiği için, ----.",
+      "stem_chunks": [
+        { "en": "----,", "tr": "----", "tag": "blank" },
+        { "en": "since", "tr": "-diği için", "tag": "conj", "label": "neden", "sign": "←" },
+        { "en": "most of", "tr": "çoğu" },
+        { "en": "its", "tr": "onun (boşluktaki kurum)", "tag": "ref" },
+        { "en": "funding came from private donors rather than the government.", "tr": "fonu devletten değil özel bağışçılardan geldi" }
+      ],
+      "summary": "Since nedeni veriyor: devletten para almamak. Boşluğa bunun sonucu ve 'its'in gösterdiği kurum gelmeli.",
+      "answer": "A",
+      "options": [
+        { "key": "A", "text": "The museum was able to remain independent in its choice of exhibitions", "text_tr": "Müze sergi seçimlerinde bağımsız kalabildi", "traps": [], "explanation": "Devlet parası yok → devlet müdahalesi yok: neden-sonuç doğru; 'its' = müze." },
+        { "key": "B", "text": "The government had a strong influence on which exhibitions the museum held", "text_tr": "Devlet, müzenin hangi sergileri açacağı üzerinde güçlü bir etkiye sahipti", "traps": ["T3"], "explanation": "Nedenle çelişiyor; ancak 'although' ile kurulabilirdi." },
+        { "key": "C", "text": "Private donors are usually wealthy individuals", "text_tr": "Özel bağışçılar genellikle varlıklı kişilerdir", "traps": ["T5"], "explanation": "Doğru olabilir ama verilen nedenin sonucu değil; 'its' de karşılıksız kalıyor." },
+        { "key": "D", "text": "Its funding was provided by private donors", "text_tr": "Fonu özel bağışçılar tarafından sağlandı", "traps": ["T1"], "explanation": "Nedeni sonuç gibi tekrar ediyor." },
+        { "key": "E", "text": "The museum will have to close next year", "text_tr": "Müze gelecek yıl kapanmak zorunda kalacak", "traps": ["T2", "T7"], "explanation": "Geçmişteki fon durumundan bu sonuç çıkmıyor; zaman da kopuk." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: since → neden (çünkü).",
+        "Neden: para devletten değil bağışçılardan geliyordu.",
+        "'its' bir kurumu gösteriyor; o kurumun bağımsızlığını anlatan A doğru."
+      ],
+      "golden_rule": "Boşluk başta ise sonraki cümledeki zamire (its, they) bak; boşluk o zamirin sahibini içermeli.",
+      "structure": "[ana cümle (sonuç)], [since + neden].",
+      "vocab": [
+        { "word": "funding", "tr": "fon, mali destek", "warmup": true, "context": "most of its funding came from private donors" },
+        { "word": "rather than", "tr": "-den ziyade, yerine" },
+        { "word": "donor", "tr": "bağışçı" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q4",
+      "number": 4,
+      "type": "cumle_tamamlama",
+      "topic": "ek",
+      "sub_topic": "Ekleme (in addition to + V-ing)",
+      "difficulty": 1,
+      "stem": "In addition to reducing air pollution, ----.",
+      "stem_tr": "Hava kirliliğini azaltmanın yanı sıra, ----.",
+      "stem_chunks": [
+        { "en": "In addition to", "tr": "-ın yanı sıra", "tag": "conj", "label": "ekleme", "sign": "+" },
+        { "en": "reducing air pollution,", "tr": "hava kirliliğini azaltmak" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "In addition to bir faydaya aynı yönde ikinci bir fayda ekler; kirliliği azaltan şey ana cümlenin öznesi olmalı.",
+      "answer": "C",
+      "options": [
+        { "key": "A", "text": "electric buses are more expensive to buy than diesel ones", "text_tr": "elektrikli otobüslerin satın alınması dizel olanlardan daha pahalı", "traps": ["T3"], "explanation": "Olumluya olumsuz ekliyor; bu bir zıtlık, ekleme değil." },
+        { "key": "B", "text": "air pollution has become a serious problem in many cities", "text_tr": "hava kirliliği birçok şehirde ciddi bir sorun hâline geldi", "traps": ["T8"], "explanation": "Kirliliği kirlilik azaltamaz; özne yanlış." },
+        { "key": "C", "text": "electric buses also make city streets noticeably quieter", "text_tr": "elektrikli otobüsler şehir sokaklarını da belirgin biçimde sessizleştirir", "traps": [], "explanation": "Aynı özneye ikinci bir fayda ekleniyor; 'also' da destekliyor." },
+        { "key": "D", "text": "electric buses were first introduced in the 1880s", "text_tr": "elektrikli otobüsler ilk kez 1880'lerde kullanılmaya başlandı", "traps": ["T5"], "explanation": "Gerçek bir bilgi olabilir ama faydaya fayda eklemiyor." },
+        { "key": "E", "text": "it was the main reason why the project was cancelled", "text_tr": "projenin iptal edilmesinin ana nedeni buydu", "traps": ["T8", "T7"], "explanation": "Kirliliği azaltmak bir projenin iptal nedeni olmaz; özne de belirsiz." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: In addition to → ekleme, aynı yön.",
+        "V-ing'in öznesi ana cümlenin öznesidir: kirliliği kim azaltıyor?",
+        "Aynı özneye ikinci olumlu özellik ekleyen C doğru."
+      ],
+      "golden_rule": "In addition to / besides + V-ing: ana cümle aynı özneyle aynı yönde devam etmeli.",
+      "structure": "[In addition to + V-ing], [aynı özne + ikinci olumlu bilgi].",
+      "vocab": [
+        { "word": "reduce", "tr": "azaltmak", "warmup": true, "context": "reducing air pollution" },
+        { "word": "noticeably", "tr": "belirgin şekilde" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q5",
+      "number": 5,
+      "type": "cumle_tamamlama",
+      "topic": "zaman",
+      "sub_topic": "Zaman bağlacı (by the time + past perfect)",
+      "difficulty": 2,
+      "stem": "By the time the rescue team reached the remote village, ----.",
+      "stem_tr": "Kurtarma ekibi uzak köye ulaştığında, ----.",
+      "stem_chunks": [
+        { "en": "By the time", "tr": "-diği zamana kadar", "tag": "conj", "label": "zaman", "sign": "⏱" },
+        { "en": "the rescue team reached the remote village,", "tr": "kurtarma ekibi uzak köye ulaştı" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "By the time + past simple → ana cümlede o andan önce tamamlanmış olay: past perfect.",
+      "answer": "E",
+      "options": [
+        { "key": "A", "text": "the storm will have passed", "text_tr": "fırtına geçmiş olacak", "traps": ["T2"], "explanation": "Future perfect; yan cümle geçmişte (reached)." },
+        { "key": "B", "text": "the villagers are waiting in the school building", "text_tr": "köylüler okul binasında bekliyor", "traps": ["T2"], "explanation": "Present continuous; geçmiş zamanlı yan cümleyle uyuşmuyor." },
+        { "key": "C", "text": "they decided to set off as soon as possible", "text_tr": "mümkün olan en kısa sürede yola çıkmaya karar verdiler", "traps": ["T7"], "explanation": "Sıra ters: yola çıkma kararı köye varıştan önce olmalı." },
+        { "key": "D", "text": "a team of doctors had arrived in the capital", "text_tr": "bir doktor ekibi başkente varmıştı", "traps": ["T5"], "explanation": "Zaman uygun ama köydeki durumla ilgisiz." },
+        { "key": "E", "text": "most of the villagers had already been taken to safety", "text_tr": "köylülerin çoğu çoktan güvenli bir yere götürülmüştü", "traps": [], "explanation": "Varıştan önce tamamlanmış olay (had been taken) ve aynı yer: doğru." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: By the time → '-diğinde (çoktan)'.",
+        "Yan cümle past simple → ana cümle past perfect olmalı.",
+        "Past perfect olan D ve E'den köyle ilgili olan E doğru."
+      ],
+      "golden_rule": "By the time + past simple gördüğünde ana cümlede had + V3 ara.",
+      "structure": "[By the time + past simple], [past perfect].",
+      "vocab": [
+        { "word": "remote", "tr": "uzak, ıssız", "warmup": true, "context": "reached the remote village" },
+        { "word": "take to safety", "tr": "güvenli yere götürmek" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q6",
+      "number": 6,
+      "type": "cumle_tamamlama",
+      "topic": "amac",
+      "sub_topic": "Amaç bağlacı (so that)",
+      "difficulty": 2,
+      "stem": "---- so that patients in rural areas could be monitored without travelling to the city.",
+      "stem_tr": "Kırsal bölgelerdeki hastalar şehre gitmeden takip edilebilsin diye, ----.",
+      "stem_chunks": [
+        { "en": "----", "tr": "----", "tag": "blank" },
+        { "en": "so that", "tr": "-sin diye", "tag": "conj", "label": "amaç", "sign": "→" },
+        { "en": "patients in rural areas could be monitored without travelling to the city.", "tr": "kırsal bölgelerdeki hastalar şehre gitmeden takip edilebilir" }
+      ],
+      "summary": "So that amaç bildirir; boşluğa bu amaca hizmet eden, geçmiş zamanlı bir eylem gelmeli (could ile uyum).",
+      "answer": "D",
+      "options": [
+        { "key": "A", "text": "The hospital will install a new video system", "text_tr": "Hastane yeni bir görüntülü sistem kuracak", "traps": ["T2"], "explanation": "Anlam yakın ama 'will' ile 'could' uyuşmuyor." },
+        { "key": "B", "text": "Many patients in rural areas lack reliable internet access", "text_tr": "Kırsal bölgelerdeki pek çok hastanın güvenilir internet erişimi yok", "traps": ["T10"], "explanation": "Konu doğru ama bir eylem değil, durum; amaca hizmet etmiyor." },
+        { "key": "C", "text": "Doctors in rural areas earned less than those in the city", "text_tr": "Kırsal bölgelerdeki doktorlar şehirdekilerden daha az kazanıyordu", "traps": ["T5"], "explanation": "Gerçek olabilir ama hastaların uzaktan takibiyle ilgisiz." },
+        { "key": "D", "text": "The hospital introduced a remote health-check service", "text_tr": "Hastane uzaktan sağlık kontrolü hizmeti başlattı", "traps": [], "explanation": "Uzaktan hizmet → şehre gitmeden takip: amaç tutuyor, zaman uyumlu." },
+        { "key": "E", "text": "Patients were asked to visit the hospital every week", "text_tr": "Hastalardan her hafta hastaneye gelmeleri istendi", "traps": ["T3"], "explanation": "'Şehre gitmeden' amacıyla çelişiyor." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: so that → amaç.",
+        "Amaç: hastalar şehre gitmeden takip edilsin.",
+        "Bu amaca yönelik, geçmiş zamanlı eylem D."
+      ],
+      "golden_rule": "So that + could/would varsa boşluktaki ana cümle de geçmiş zamanda olmalı.",
+      "structure": "[ana cümle (eylem)] so that [özne + could/would + V].",
+      "vocab": [
+        { "word": "monitor", "tr": "izlemek, takip etmek", "warmup": true, "context": "could be monitored without travelling" },
+        { "word": "rural", "tr": "kırsal" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q7",
+      "number": 7,
+      "type": "cumle_tamamlama",
+      "topic": "karsilastirma",
+      "sub_topic": "Karşıtlık yoluyla karşılaştırma (unlike)",
+      "difficulty": 2,
+      "stem": "Unlike many of her contemporaries, who wrote mainly for a small, educated elite, ----.",
+      "stem_tr": "Esas olarak küçük, eğitimli bir seçkin kesim için yazan çağdaşlarının çoğunun aksine, ----.",
+      "stem_chunks": [
+        { "en": "Unlike", "tr": "-ın aksine", "tag": "conj", "label": "karşılaştırma", "sign": "≠" },
+        { "en": "many of", "tr": "çoğu" },
+        { "en": "her", "tr": "onun (kadın yazar)", "tag": "ref" },
+        { "en": "contemporaries,", "tr": "çağdaşları" },
+        { "en": "who", "tr": "ki onlar", "tag": "ref" },
+        { "en": "wrote mainly for a small, educated elite,", "tr": "esas olarak küçük, eğitimli bir seçkin kesim için yazdı" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "Unlike iki tarafı karşılaştırır: çağdaşları seçkinlere yazdı; 'her' ile gösterilen kadın yazar tersini yapmalı.",
+      "answer": "A",
+      "options": [
+        { "key": "A", "text": "the novelist deliberately chose a simple style that ordinary readers could follow", "text_tr": "romancı bilerek sıradan okurların takip edebileceği sade bir üslup seçti", "traps": [], "explanation": "Seçkinler yerine sıradan okur: karşıtlık tam, özne 'her' ile uyumlu." },
+        { "key": "B", "text": "the novelist's books were read only by a few scholars", "text_tr": "romancının kitapları yalnızca birkaç akademisyen tarafından okundu", "traps": ["T3"], "explanation": "Çağdaşlarıyla aynı durum; 'unlike' farklılık ister." },
+        { "key": "C", "text": "many writers of the period were highly educated", "text_tr": "dönemin pek çok yazarı yüksek eğitimliydi", "traps": ["T8"], "explanation": "Özne çağdaşlar oldu; karşılaştırılan kişi (her) ortadan kalktı." },
+        { "key": "D", "text": "she wrote mainly for wealthy readers", "text_tr": "esas olarak varlıklı okurlar için yazdı", "traps": ["T1", "T3"], "explanation": "Özne doğru ama ilk kısmı neredeyse tekrar ediyor; fark yok." },
+        { "key": "E", "text": "they rarely discussed social problems in their work", "text_tr": "eserlerinde sosyal sorunlara nadiren değindiler", "traps": ["T6"], "explanation": "'they' çağdaşları gösterir; karşılaştırılan kişi tekil 'her' olmalı." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: Unlike → iki taraf farklı olmalı.",
+        "'her contemporaries' → ana cümlenin öznesi tekil bir kadın yazar.",
+        "Seçkinler yerine sıradan okura yönelen A doğru."
+      ],
+      "golden_rule": "Unlike X: ana cümlenin öznesi X ile karşılaştırılabilir olmalı ve ondan farklı davranmalı.",
+      "structure": "[Unlike + isim (, who ...)], [karşılaştırılan özne + farklı özellik].",
+      "vocab": [
+        { "word": "contemporary", "tr": "çağdaş, aynı dönemde yaşamış kişi", "warmup": true, "context": "many of her contemporaries" },
+        { "word": "elite", "tr": "seçkin kesim" },
+        { "word": "deliberately", "tr": "bilerek, kasten" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q8",
+      "number": 8,
+      "type": "cumle_tamamlama",
+      "topic": "iliskili_yapi",
+      "sub_topic": "The more ..., the ... yapısı",
+      "difficulty": 3,
+      "stem": "The more time children spend reading for pleasure, ----.",
+      "stem_tr": "Çocuklar zevk için okumaya ne kadar çok zaman ayırırsa, ----.",
+      "stem_chunks": [
+        { "en": "The more", "tr": "ne kadar çok ... -rsa", "tag": "conj", "label": "ilişkili yapı", "sign": "↗" },
+        { "en": "time children spend reading for pleasure,", "tr": "çocuklar zevk için okumaya zaman ayırır" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "'The more ...' ikinci yarıda 'the + karşılaştırma' ister ve anlamca doğru orantı kurmalı.",
+      "answer": "C",
+      "options": [
+        { "key": "A", "text": "the fewer books they are likely to own", "text_tr": "o kadar az kitaba sahip olmaları muhtemeldir", "traps": ["T7"], "explanation": "Yapı doğru ama ilişki mantıksız: çok okuyan daha az kitap sahibi olmaz." },
+        { "key": "B", "text": "the most fluent readers they become", "text_tr": "en akıcı okurlar olurlar", "traps": ["T11"], "explanation": "Superlative (most); yapı comparative ister." },
+        { "key": "C", "text": "the richer their vocabulary tends to become", "text_tr": "kelime dağarcıkları o kadar zenginleşme eğilimindedir", "traps": [], "explanation": "the + comparative ve mantıklı doğru orantı: çok okuma → zengin kelime." },
+        { "key": "D", "text": "the more popular children's literature has become", "text_tr": "çocuk edebiyatı o kadar popüler hâle gelmiştir", "traps": ["T5", "T2"], "explanation": "Yapı doğru ama çocuğun okumasının sonucu değil; zaman da kopuk." },
+        { "key": "E", "text": "so their school performance improves", "text_tr": "bu yüzden okul başarıları artar", "traps": ["T11"], "explanation": "Anlam yakın ama 'the + comparative' yerine 'so' ile kurulmuş." }
+      ],
+      "solution_steps": [
+        "Yapıyı tanı: The more ... → ikinci yarı 'the + comparative'.",
+        "B (superlative) ve E (so) yapıdan elenir.",
+        "A, C, D arasında okumanın mantıklı sonucu C."
+      ],
+      "golden_rule": "The + comparative ile başlayan cümle, ikinci yarıda da the + comparative ile ve mantıklı bir orantıyla biter.",
+      "structure": "[The + comparative ...], [the + comparative ...].",
+      "vocab": [
+        { "word": "for pleasure", "tr": "zevk için, keyfine", "warmup": true, "context": "spend reading for pleasure" },
+        { "word": "tend to", "tr": "eğiliminde olmak" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q9",
+      "number": 9,
+      "type": "cumle_tamamlama",
+      "topic": "zitlik",
+      "sub_topic": "Karşıtlık bağlacı (whereas)",
+      "difficulty": 3,
+      "stem": "----, whereas its neighbours rely almost entirely on imported fuel.",
+      "stem_tr": "----; oysa komşuları neredeyse tamamen ithal yakıta bağımlı.",
+      "stem_chunks": [
+        { "en": "----,", "tr": "----", "tag": "blank" },
+        { "en": "whereas", "tr": "oysa", "tag": "conj", "label": "zıtlık", "sign": "↔" },
+        { "en": "its", "tr": "onun (boşluktaki ülke)", "tag": "ref" },
+        { "en": "neighbours rely almost entirely on imported fuel.", "tr": "komşuları neredeyse tamamen ithal yakıta dayanır" }
+      ],
+      "summary": "Whereas iki tarafı karşı karşıya koyar: komşular ithal yakıta bağımlı; boşluktaki ülke bunun tersi olmalı ve 'its'in sahibi olmalı.",
+      "answer": "E",
+      "options": [
+        { "key": "A", "text": "Its neighbours have recently begun to invest in solar power", "text_tr": "Komşuları son zamanlarda güneş enerjisine yatırım yapmaya başladı", "traps": ["T8"], "explanation": "Her iki taraf da komşular; karşılaştırılacak ülke yok." },
+        { "key": "B", "text": "Rising fuel prices have affected the whole region", "text_tr": "Artan yakıt fiyatları tüm bölgeyi etkiledi", "traps": ["T5"], "explanation": "Konuyla ilgili ama karşıtlık kurmuyor; 'its' karşılıksız." },
+        { "key": "C", "text": "Although the country has few natural resources", "text_tr": "Ülkenin az doğal kaynağı olmasına rağmen", "traps": ["T11"], "explanation": "Although ile başlayan yan cümle tek başına ana cümle olamaz." },
+        { "key": "D", "text": "The country imports most of its electricity from abroad", "text_tr": "Ülke elektriğinin çoğunu yurt dışından ithal ediyor", "traps": ["T3"], "explanation": "Komşularla benzer durum; whereas karşıtlık ister." },
+        { "key": "E", "text": "The small country generates nearly all of its energy from domestic sources", "text_tr": "Küçük ülke enerjisinin neredeyse tamamını yerli kaynaklardan üretiyor", "traps": [], "explanation": "Yerli üretim ↔ ithal yakıt: karşıtlık net; 'its' = ülke." }
+      ],
+      "solution_steps": [
+        "Bağlacı bul: whereas → iki taraf arasında karşıtlık.",
+        "'its neighbours' → boşlukta bir ülke olmalı.",
+        "İthal yakıta karşı yerli üretim anlatan E doğru."
+      ],
+      "golden_rule": "Whereas'ın iki yanında iki farklı özne ve zıt özellik olmalı.",
+      "structure": "[A + özellik], whereas [B + zıt özellik].",
+      "vocab": [
+        { "word": "rely on", "tr": "-e dayanmak, bağımlı olmak", "warmup": true, "context": "rely almost entirely on imported fuel" },
+        { "word": "domestic", "tr": "yerli, iç" }
+      ],
+      "review": { "status": "reviewed", "blind_solve_match": true }
+    },
+    {
+      "id": "ornek-q10",
+      "number": 10,
+      "type": "cumle_tamamlama",
+      "topic": "neden_sonuc",
+      "sub_topic": "So ... that sonuç yapısı",
+      "difficulty": 3,
+      "stem": "The instructions that came with the device were so poorly translated that ----.",
+      "stem_tr": "Cihazla birlikte gelen talimatlar o kadar kötü çevrilmişti ki ----.",
+      "stem_chunks": [
+        { "en": "The instructions", "tr": "talimatlar" },
+        { "en": "that", "tr": "ki onlar", "tag": "ref" },
+        { "en": "came with the device were", "tr": "cihazla birlikte geldi, -di" },
+        { "en": "so poorly translated that", "tr": "o kadar kötü çevrilmişti ki", "tag": "conj", "label": "sonuç", "sign": "→" },
+        { "en": "----.", "tr": "----", "tag": "blank" }
+      ],
+      "summary": "So + sıfat/zarf + that: boşluğa kötü çevirinin doğal sonucu gelmeli, tam bir cümle olarak.",
+      "answer": "B",
+      "options": [
+        { "key": "A", "text": "the translator was praised for her accuracy", "text_tr": "çevirmen doğruluğu için övüldü", "traps": ["T3"], "explanation": "Kötü çevirinin sonucu övgü olamaz; yön ters." },
+        { "key": "B", "text": "most users gave up and searched for video tutorials online", "text_tr": "kullanıcıların çoğu vazgeçip internette video anlatımlar aradı", "traps": [], "explanation": "Anlaşılmayan talimat → başka kaynak arama: mantıklı sonuç." },
+        { "key": "C", "text": "they were printed in several different languages", "text_tr": "birkaç farklı dilde basılmışlardı", "traps": ["T5"], "explanation": "Talimatlarla ilgili ama kötü çevirinin sonucu değil." },
+        { "key": "D", "text": "being difficult for most users to understand", "text_tr": "çoğu kullanıcı için anlaşılması zor olarak", "traps": ["T11"], "explanation": "Anlam yakın ama özne ve çekimli fiil yok; that'ten sonra tam cümle gerekir." },
+        { "key": "E", "text": "they had been prepared by a professional team", "text_tr": "profesyonel bir ekip tarafından hazırlanmışlardı", "traps": ["T7"], "explanation": "Sonuç değil, kötü çeviriyle çelişen bir neden veriyor." }
+      ],
+      "solution_steps": [
+        "Yapıyı tanı: so + zarf + that → sonuç.",
+        "D tam cümle değil, elenir.",
+        "Kötü çevirinin mantıklı sonucu B."
+      ],
+      "golden_rule": "So ... that gördüğünde that'ten sonra ilk yarının abartılı durumundan doğan sonucu, tam cümle olarak ara.",
+      "structure": "[özne + be + so + sıfat/zarf] that [sonuç cümlesi].",
+      "vocab": [
+        { "word": "device", "tr": "cihaz, aygıt", "warmup": true, "context": "the instructions that came with the device" },
+        { "word": "give up", "tr": "vazgeçmek" }
       ],
       "review": { "status": "reviewed", "blind_solve_match": true }
     }

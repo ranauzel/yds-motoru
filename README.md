@@ -33,6 +33,10 @@ data/raw/            ÖSYM PDF'leri (git dışı)
 docs/                Tasarım, arayüz, spec ve planlar
 ```
 
+## Canlı demo
+
+Misafir olarak, kayıt olmadan dene: **(adres yakında)**. Demodaki 10 soru bizim yazdığımız örnek sorulardır, ÖSYM sorusu değildir. Misafir hesapları 7 gün sonra silinir. Kendi sorularınla kullanmak için uygulamayı aşağıdaki gibi kendin kur.
+
 ## Hızlı deneme (Docker)
 
 Bilgisayarında [Docker](https://www.docker.com/products/docker-desktop/) kurulu olsun. Repo kökünde:
@@ -58,6 +62,13 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 2. Veritabanı: Neon (bulut) **ya da** kendi bilgisayarında `docker compose up -d db`.
 3. `cd apps/web && pnpm install && pnpm db:migrate && pnpm content:import && pnpm user:create <email> <şifre>`
 4. `pnpm dev` → http://localhost:3000
+
+## Vercel'e yükleme (kendi demon)
+
+1. Neon'da demo için **ayrı** bir veritabanı aç. Gerçek sorularının olduğu veritabanını kullanma.
+2. Vercel → *Add New Project* → bu repoyu seç → **Root Directory: `apps/web`**.
+3. Ortam değişkenleri: `DATABASE_URL` (demo veritabanı), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (sitenin adresi, ör. `https://xxx.vercel.app`), `ALLOW_GUEST=true`, `CRON_SECRET`.
+4. Deploy. Her derlemede tablolar güncellenir ve repodaki örnek sorular aktarılır (`vercel.json`). Eski misafir hesapları her gece silinir.
 
 ## Komutlar (apps/web içinde)
 

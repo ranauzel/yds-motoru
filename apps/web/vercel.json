@@ -1,0 +1,5 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm db:migrate && pnpm content:import && pnpm build",
+  "crons": [{ "path": "/api/cron/misafir-temizligi", "schedule": "0 3 * * *" }]
+}
