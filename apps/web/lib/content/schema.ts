@@ -28,7 +28,7 @@ export const TOPIC_NAMES: Record<(typeof TOPICS)[number], string> = {
   amac: "Amaç", karsilastirma: "Karşılaştırma", iliskili_yapi: "İlişkili yapı / gönderge",
 };
 
-const OptionKey = z.enum(["A", "B", "C", "D", "E"]);
+export const OptionKey = z.enum(["A", "B", "C", "D", "E"]);
 
 export const Option = z.object({
   key: OptionKey,
