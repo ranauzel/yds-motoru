@@ -12,7 +12,7 @@ Tasarım: [docs/TASARIM.md](docs/TASARIM.md) · Arayüz: [docs/ARAYUZ.md](docs/A
 - **Pratik ekranı** (`/oturum/[id]`): kelime ısınması → soru (seç, *Eminim / Emin değilim*) → geri bildirim, tuzaklar, çözüm adımları → mola → özet ve gözden geçirme. Yardımcılar: çeviri (T), kelimeler (K), ipucu (I). Tamamen klavyeyle kullanılabilir.
 - **Kayıt:** her cevap, ısınma kelimesi ve ilerleme Postgres'e yazılır; bağlantı koparsa sıradaki kayıtlar yeniden denenir. Oturum yarıda kalırsa ana sayfadan devam edilir, başka cihazda kalınan yerden açılır.
 - **Tekrar:** sorular ve kelimeler SM-2 ile planlanır (`review_items`).
-- **İçerik:** sorular JSON dosyalarında yazılır, `pnpm content:import` ile `questions` tablosuna aktarılır; uygulama soruları veritabanından okur. Soru tipi şimdilik cümle tamamlama. Her soru bir konuya ayrılmış: koşul, zıtlık, neden-sonuç, ekleme, zaman, amaç, karşılaştırma, ilişkili yapı.
+- **İçerik:** sorular JSON dosyalarında yazılır, `pnpm content:import` ile `questions` tablosuna aktarılır; uygulama soruları veritabanından okur. Her soru bir hesaba aittir: herkes kendi sorularını görür, hiç sorusu olmayan (misafir) herkese açık örnekleri görür. Soru tipi şimdilik cümle tamamlama. Her soru bir konuya ayrılmış: koşul, zıtlık, neden-sonuç, ekleme, zaman, amaç, karşılaştırma, ilişkili yapı.
 
 **Sırada:** vakti gelen yanlışların oturuma çekilmesi, konuya göre çalışma.
 
@@ -60,12 +60,12 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 
 1. `apps/web/.env.example` dosyasını `apps/web/.env.local` olarak kopyala ve değerleri doldur.
 2. Veritabanı: Neon (bulut) **ya da** kendi bilgisayarında `docker compose up -d db`.
-3. `cd apps/web && pnpm install && pnpm db:migrate && pnpm content:import && pnpm user:create <email> <şifre>`
+3. `cd apps/web && pnpm install && pnpm db:migrate && pnpm user:create <email> <şifre> && pnpm content:import --sahip <email>`
 4. `pnpm dev` → http://localhost:3000
 
 ## Vercel'e yükleme (kendi demon)
 
-1. Neon'da demo için **ayrı** bir veritabanı aç. Gerçek sorularının olduğu veritabanını kullanma.
+1. Veritabanı olarak kendi Neon veritabanını kullanabilirsin. Her soru bir hesaba aittir ve yalnızca sahibi görür; misafirler sadece herkese açık örnek soruları görür. İstersen Vercel → Storage → Neon ile ayrı bir veritabanı da açabilirsin.
 2. Vercel → *Add New Project* → bu repoyu seç → **Root Directory: `apps/web`**.
 3. Ortam değişkenleri: `DATABASE_URL` (demo veritabanı), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (sitenin adresi, ör. `https://xxx.vercel.app`), `ALLOW_GUEST=true`, `CRON_SECRET`.
 4. Deploy. Her derlemede tablolar güncellenir ve repodaki örnek sorular aktarılır (`vercel.json`). Eski misafir hesapları her gece silinir.
@@ -80,7 +80,7 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 | `pnpm lint` | ESLint |
 | `pnpm db:generate` | Şema değişikliğinden migration üretir |
 | `pnpm db:migrate` | Migration'ları veritabanına uygular |
-| `pnpm content:import [klasör]` | Soru JSON'larını doğrular, veritabanına aktarır (yeni/değişen sorular) |
+| `pnpm content:import [klasör] [--sahip <email>]` | Soru JSON'larını doğrular, veritabanına aktarır. Gerçek sorular `--sahip` ister ve yalnızca o hesaba görünür; örnek sorular herkese açıktır |
 | `pnpm db:check` | Bağlantıyı ve tabloları kontrol eder |
 | `pnpm db:studio` | Drizzle Studio |
 | `pnpm user:create <email> <şifre> [ad]` | Hesap oluşturur |
@@ -98,7 +98,7 @@ python pipeline/build_practice.py content/sorular/<sinav>/<dosya>.json  # yerel 
 ```
 
 4. `cd apps/web && pnpm test`: içerik testleri bozuk dosyayı yakalar.
-5. `pnpm content:import`: sorular veritabanına aktarılır (Docker'da `docker compose restart web`).
+5. `pnpm content:import --sahip <email>`: sorular veritabanına senin hesabına ait olarak aktarılır (Docker'da `docker compose restart web`).
 6. İncelenen soruların `review.status` alanını `reviewed` yap ve tekrar aktar.
 
 Windows'ta Python çıktısında Türkçe karakter hatası alırsan önce `PYTHONIOENCODING=utf-8` ayarla.

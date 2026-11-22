@@ -27,7 +27,7 @@ const byId = (id: string) => eq(practiceSessions.id, id);
 
 export async function startSession(): Promise<void> {
   const user = await requireUser();
-  const questionIds = pickSessionQuestions(await getAllQuestions());
+  const questionIds = pickSessionQuestions(await getAllQuestions(user.id));
   if (!questionIds.length) redirect("/"); // henüz soru aktarılmamış
   const id = crypto.randomUUID();
   await db.insert(practiceSessions).values({ id, userId: user.id, questionIds });
@@ -39,7 +39,7 @@ export async function recordAnswer(sessionId: string, questionId: string, a: Ans
   if (!o || !o.row.questionIds.includes(questionId)) return NOT_FOUND;
   const { user } = o;
   if (!OPTION_KEYS.includes(a?.choice)) return { ok: false, error: "invalid" };
-  const q = await getQuestion(questionId);
+  const q = await getQuestion(user.id, questionId);
   if (!q) return NOT_FOUND;
 
   const correct = a.choice === q.answer;

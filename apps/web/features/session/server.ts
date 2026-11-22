@@ -29,7 +29,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
   const row = await getOwnedSession(userId, id);
   if (!row) return { ok: false, reason: "not_found" };
 
-  const byId = await getQuestionsByIds(row.questionIds);
+  const byId = await getQuestionsByIds(userId, row.questionIds);
   const questions = row.questionIds.map((qid) => byId.get(qid));
   if (questions.some((q) => !q)) return { ok: false, reason: "content_changed" };
 

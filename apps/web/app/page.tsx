@@ -41,7 +41,7 @@ async function Greeting() {
 
 async function SessionSummary() {
   const user = await requireUser();
-  const [questions, open] = await Promise.all([getAllQuestions(), latestUnfinishedSession(user.id)]);
+  const [questions, open] = await Promise.all([getAllQuestions(user.id), latestUnfinishedSession(user.id)]);
   if (!questions.length)
     return (
       <p className="mt-3 text-sm text-muted">

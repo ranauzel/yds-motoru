@@ -62,6 +62,8 @@ export const verification = pgTable("verification", {
 /** Sorular. Kaynak JSON dosyalarıdır; bu tabloya yalnızca `pnpm content:import` yazar. */
 export const questions = pgTable("questions", {
   id: text("id").primaryKey(),                      // örn. "2021-yds-1-q28"
+  // Sahibi: yalnızca o görür. Boş (null) = herkese açık örnek soru.
+  ownerId: text("owner_id").references(() => user.id, { onDelete: "cascade" }),
   examId: text("exam_id").notNull(),
   examName: text("exam_name").notNull(),
   examDate: date("exam_date").notNull(),
@@ -76,6 +78,7 @@ export const questions = pgTable("questions", {
 }, (t) => [
   index("questions_exam_number_idx").on(t.examId, t.number),
   index("questions_type_topic_idx").on(t.type, t.topic),
+  index("questions_owner_idx").on(t.ownerId),
 ]);
 
 // ── Çalışma verisi (her satır bir kullanıcıya ait) ─────────────────────────────────
