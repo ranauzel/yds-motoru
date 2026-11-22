@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseImportArgs, visibleTo } from "./import-args";
+import { parseImportArgs } from "./import-args";
 
 describe("parseImportArgs", () => {
   it("klasör ve --sahip okunur", () => {
@@ -11,13 +11,8 @@ describe("parseImportArgs", () => {
   it("--sahip değeri yoksa hata", () => {
     expect(() => parseImportArgs(["--sahip"])).toThrow(/--sahip/);
   });
-});
 
-describe("visibleTo", () => {
-  it("kendi sorusu olan kullanıcı yalnızca kendi sorularını görür", () => {
-    expect(visibleTo(true)).toBe("own");
-  });
-  it("hiç sorusu olmayan kullanıcı (misafir) herkese açık örnekleri görür", () => {
-    expect(visibleTo(false)).toBe("public");
+  it("e-posta küçük harfe çevrilir (hesaplar küçük harfle kayıtlı)", () => {
+    expect(parseImportArgs(["--sahip", " Ben@Ornek.COM "]).owner).toBe("ben@ornek.com");
   });
 });

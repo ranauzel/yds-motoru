@@ -1,9 +1,8 @@
 // Soruları veritabanından okur (sunucu tarafı). Satırlar import sırasında şemayla doğrulandı.
-// Her kullanıcı yalnızca kendi sorularını görür; hiç sorusu yoksa herkese açık örnekleri (bkz. visibleTo).
-import { and, asc, eq, inArray, isNull, type SQL } from "drizzle-orm";
+// Her kullanıcı yalnızca kendi sorularını görür; hiç sorusu yoksa (ör. misafir) herkese açık örnekleri.
+import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
 import { cache } from "react";
 import { db, schema } from "@/lib/db";
-import { visibleTo } from "./import-args";
 import type { Question } from "./schema";
 
 const { questions } = schema;
@@ -11,7 +10,7 @@ const { questions } = schema;
 /** Bu kullanıcının görebileceği soruların filtresi. Aynı istek içinde bir kez hesaplanır. */
 const visibility = cache(async (userId: string): Promise<SQL> => {
   const own = await db.select({ id: questions.id }).from(questions).where(eq(questions.ownerId, userId)).limit(1);
-  return visibleTo(own.length > 0) === "own" ? eq(questions.ownerId, userId) : isNull(questions.ownerId);
+  return own.length ? eq(questions.ownerId, userId) : eq(questions.isPublic, true);
 });
 
 /** Kullanıcının bütün soruları, sınav ve soru numarasına göre sıralı. */

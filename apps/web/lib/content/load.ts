@@ -9,8 +9,14 @@ export function resolveContentDir(root: string): string {
   return existsSync(path.join(root, "sorular")) ? root : path.join(root, "ornek");
 }
 
-export const contentDir = () =>
-  resolveContentDir(process.env.CONTENT_DIR ?? path.resolve(process.cwd(), "..", "..", "content"));
+/** Örnek (herkese açık) içerik yalnızca içerik kökündeki ornek klasörüdür; adı ornek olan başka klasörler sayılmaz. */
+export function isExampleDir(dir: string, root: string): boolean {
+  return path.resolve(dir) === path.resolve(root, "ornek");
+}
+
+export const contentRoot = () => process.env.CONTENT_DIR ?? path.resolve(process.cwd(), "..", "..", "content");
+
+export const contentDir = () => resolveContentDir(contentRoot());
 
 export async function loadQuestionFiles(dir = contentDir()): Promise<QuestionFile[]> {
   const root = path.join(dir, "sorular");

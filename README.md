@@ -4,7 +4,7 @@ Kişisel YDS çalışma uygulaması. Gerçek ÖSYM sorularını tuzak analizi, �
 
 Tasarım: [docs/TASARIM.md](docs/TASARIM.md) · Arayüz: [docs/ARAYUZ.md](docs/ARAYUZ.md) · Pratik ekranı: [docs/superpowers/specs/2026-11-22-pratik-ekrani-design.md](docs/superpowers/specs/2026-11-22-pratik-ekrani-design.md)
 
-> Bu repoda ÖSYM sorusu **yoktur**. ÖSYM soruları telif hakkıyla korunur, bu yüzden yayımlanmaz. Repoda yalnızca `content/ornek/` altında kendi yazdığımız bir örnek soru var. Gerçek sorular `content/sorular/` klasöründe durur; bu klasör git dışıdır ve ayrı, private bir repoda tutulur. Kendi sorularını aynı formatta oraya koyabilirsin.
+> Bu repoda ÖSYM sorusu **yoktur**. ÖSYM soruları telif hakkıyla korunur, bu yüzden yayımlanmaz. Repoda yalnızca `content/ornek/` altında kendi yazdığımız 10 örnek soru var. Gerçek sorular `content/sorular/` klasöründe durur; bu klasör git dışıdır ve ayrı, private bir repoda tutulur. Kendi sorularını aynı formatta oraya koyabilirsin.
 
 ## Durum
 
@@ -27,7 +27,7 @@ apps/web/            Next.js 16 (App Router, cacheComponents)
   lib/db/            Postgres şeması (Drizzle): hesaplar, sorular, çalışma verisi
   drizzle/           Migration'lar
 pipeline/            Python: içerik doğrulama, inceleme ve pratik sayfası üretimi
-content/ornek/       Örnek soru (repoda; ÖSYM sorusu değil)
+content/ornek/       Örnek sorular (repoda; ÖSYM sorusu değil)
 content/sorular/     Gerçek sorular (JSON, git dışı): <sinav>/<soru-tipi>.json
 data/raw/            ÖSYM PDF'leri (git dışı)
 docs/                Tasarım, arayüz, spec ve planlar
@@ -47,7 +47,7 @@ docker compose up -d --build
 
 http://localhost:3000 adresini aç ve `deneme@ornek.com` / `deneme123` ile giriş yap. Açılışta tablolar kurulur, sorular aktarılır ve bu deneme hesabı oluşturulur. Hesap bilgilerini değiştirmek için repo kökünde bir `.env` dosyasına `DEMO_EMAIL=…` ve `DEMO_PASSWORD=…` yaz.
 
-İlk açılışta tek bir örnek soru görürsün. **Kendi sorularını eklemek için:**
+İlk açılışta 10 örnek soru görürsün. **Kendi sorularını eklemek için:**
 
 1. JSON dosyalarını `content/sorular/<sinav>/<soru-tipi>.json` olarak koy (format için aşağıdaki "Yeni soru ekleme" bölümüne bak).
 2. `docker compose restart web`: açılışta sorular doğrulanıp yeniden aktarılır. Bozuk dosya varsa uygulama açılmaz; hatayı `docker compose logs web` gösterir.
@@ -65,7 +65,7 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 
 ## Vercel'e yükleme (kendi demon)
 
-1. Veritabanı olarak kendi Neon veritabanını kullanabilirsin. Her soru bir hesaba aittir ve yalnızca sahibi görür; misafirler sadece herkese açık örnek soruları görür. İstersen Vercel → Storage → Neon ile ayrı bir veritabanı da açabilirsin.
+1. Veritabanı olarak kendi Neon veritabanını kullanabilirsin. Gerçek sorular yalnızca sahibine görünür; misafirler sadece herkese açık örnek soruları görür. Sahip özelliğinden önce aktardığın sorular güncellemeden sonra kimseye görünmez; onları tekrar sahiplenmek için bir kez `pnpm content:import --sahip <email>` çalıştır. İstersen Vercel → Storage → Neon ile ayrı bir veritabanı da açabilirsin.
 2. Vercel → *Add New Project* → bu repoyu seç → **Root Directory: `apps/web`**.
 3. Ortam değişkenleri: `DATABASE_URL` (demo veritabanı), `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (sitenin adresi, ör. `https://xxx.vercel.app`), `ALLOW_GUEST=true`, `CRON_SECRET`.
 4. Deploy. Her derlemede tablolar güncellenir ve repodaki örnek sorular aktarılır (`vercel.json`). Eski misafir hesapları her gece silinir.
@@ -80,11 +80,11 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 | `pnpm lint` | ESLint |
 | `pnpm db:generate` | Şema değişikliğinden migration üretir |
 | `pnpm db:migrate` | Migration'ları veritabanına uygular |
-| `pnpm content:import [klasör] [--sahip <email>]` | Soru JSON'larını doğrular, veritabanına aktarır. Gerçek sorular `--sahip` ister ve yalnızca o hesaba görünür; örnek sorular herkese açıktır |
+| `pnpm content:import [klasör] [--sahip <email>]` | Soru JSON'larını doğrular, veritabanına aktarır. Gerçek sorular `--sahip` ister ve yalnızca o hesaba görünür; örnek sorular herkese açıktır. Başka hesaba ait sorular devralınmaz |
 | `pnpm db:check` | Bağlantıyı ve tabloları kontrol eder |
 | `pnpm db:studio` | Drizzle Studio |
 | `pnpm user:create <email> <şifre> [ad]` | Hesap oluşturur |
-| `pnpm user:delete <email>` | Hesabı ve tüm verilerini siler |
+| `pnpm user:delete <email>` | Hesabı ve tüm verilerini (aktardığı sorular dahil) siler |
 
 ## Yeni soru ekleme
 

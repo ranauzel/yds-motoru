@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { loadQuestions, resolveContentDir } from "./load";
+import { isExampleDir, loadQuestions, resolveContentDir } from "./load";
 import { TOPICS } from "./schema";
 
 const ROOT = path.resolve(__dirname, "..", "..", "..", "..", "content");
@@ -30,5 +30,13 @@ describe("içerik klasörü seçimi", () => {
     expect(resolveContentDir(root)).toBe(path.join(root, "ornek"));
     mkdirSync(path.join(root, "sorular"));
     expect(resolveContentDir(root)).toBe(root);
+  });
+
+  it("yalnızca içerik kökündeki ornek klasörü örnek sayılır", () => {
+    const root = path.resolve("/icerik");
+    expect(isExampleDir(path.join(root, "ornek"), root)).toBe(true);
+    expect(isExampleDir(path.join(root, "ornek", "."), root)).toBe(true);
+    expect(isExampleDir(path.resolve("/baska/ornek"), root)).toBe(false);
+    expect(isExampleDir(root, root)).toBe(false);
   });
 });

@@ -62,8 +62,10 @@ export const verification = pgTable("verification", {
 /** Sorular. Kaynak JSON dosyalarıdır; bu tabloya yalnızca `pnpm content:import` yazar. */
 export const questions = pgTable("questions", {
   id: text("id").primaryKey(),                      // örn. "2021-yds-1-q28"
-  // Sahibi: yalnızca o görür. Boş (null) = herkese açık örnek soru.
+  // Sahibi: yalnızca o görür. Hesap silinince soruları da silinir.
   ownerId: text("owner_id").references(() => user.id, { onDelete: "cascade" }),
+  // Yalnızca örnek sorular true. Varsayılan gizli: sahipsiz eski satırlar kendiliğinden açılmaz (bkz. lib/content/access.ts).
+  isPublic: boolean("is_public").notNull().default(false),
   examId: text("exam_id").notNull(),
   examName: text("exam_name").notNull(),
   examDate: date("exam_date").notNull(),
