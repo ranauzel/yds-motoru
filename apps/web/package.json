@@ -15,9 +15,11 @@
     "user:create": "tsx scripts/create-user.ts",
     "db:check": "tsx scripts/db-check.ts",
     "user:delete": "tsx scripts/delete-user.ts",
-    "content:import": "tsx scripts/import-content.ts"
+    "content:import": "tsx scripts/import-content.ts",
+    "content:generate": "tsx scripts/generate-content.ts"
   },
   "dependencies": {
+    "@google/genai": "^3.6.1",
     "better-auth": "^1.7.26",
     "drizzle-orm": "^0.45.4",
     "next": "16.4.6",

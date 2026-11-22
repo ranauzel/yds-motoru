@@ -89,7 +89,15 @@ Durdurmak için `docker compose down`. Verilerin (`yds-db` volume'ü) silinmez. 
 ## Yeni soru ekleme
 
 1. Sınav PDF'ini `data/raw/` içine koy (git'e girmez).
-2. Soruları `content/sorular/<sinav>/<soru-tipi>.json` dosyasına şemaya uygun yaz. Örnek: [content/ornek/sorular/ornek/cumle-tamamlama.json](content/ornek/sorular/ornek/cumle-tamamlama.json). Şema: ([apps/web/lib/content/schema.ts](apps/web/lib/content/schema.ts)). Her soruda şunlar olmalı: `topic`, şıkların çevirisi, yanlış şıklar için tuzak kodu, çözüm adımları ve kelimeler.
+2. **Otomatik (cümle tamamlama):** cevap anahtarını `data/raw/<sinav>-anahtar.txt` dosyasına her satırda `27: C` olacak şekilde yaz (iptal edilen soruyu yazma), `apps/web/.env.local`'a `GEMINI_API_KEY` ekle ve çalıştır:
+
+```
+cd apps/web && pnpm content:generate ../../data/raw/<sinav>.pdf --anahtar ../../data/raw/<sinav>-anahtar.txt --sinav <sinav> --tarih <YYYY-MM-DD> --ad "<sınav adı>"
+```
+
+   Kontrollerden (şema + kör çözüm) geçen sorular `content/sorular/<sinav>/cumle-tamamlama.json`'a `draft` olarak yazılır. Geçemeyenler gerekçeleriyle `data/raw/<sinav>/inceleme.json`'a düşer; onları düzeltip içerik dosyasına kendin eklersin. Doğru cevap her zaman anahtardan gelir.
+
+   **Elle:** soruları `content/sorular/<sinav>/<soru-tipi>.json` dosyasına şemaya uygun yaz. Örnek: [content/ornek/sorular/ornek/cumle-tamamlama.json](content/ornek/sorular/ornek/cumle-tamamlama.json). Şema: ([apps/web/lib/content/schema.ts](apps/web/lib/content/schema.ts)). Her soruda şunlar olmalı: `topic`, şıkların çevirisi, yanlış şıklar için tuzak kodu, çözüm adımları ve kelimeler.
 3. Doğrula ve inceleme sayfası üret (repo kökünde):
 
 ```
