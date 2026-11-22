@@ -54,7 +54,8 @@ export const Vocab = z.object({
   context: z.string().optional(),
 });
 
-export const Question = z.object({
+/** Sorunun alanları. Kurallar aşağıda `Question`'da; soru hattı modele bu temelden türetilmiş şemayı verir. */
+export const QuestionBase = z.object({
   id: z.string().min(1),
   number: z.number().int().min(1).max(80),
   type: z.enum(QUESTION_TYPES),
@@ -72,7 +73,9 @@ export const Question = z.object({
   structure: z.string(),
   vocab: z.array(Vocab),
   review: z.object({ status: z.enum(["draft", "reviewed"]), blind_solve_match: z.boolean() }),
-}).superRefine((q, ctx) => {
+});
+
+export const Question = QuestionBase.superRefine((q, ctx) => {
   const keys = q.options.map((o) => o.key).join("");
   if (keys !== "ABCDE") ctx.addIssue({ code: "custom", message: `şıklar A–E sırasında değil: ${keys}` });
   for (const o of q.options) {
