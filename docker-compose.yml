@@ -1,7 +1,13 @@
-# Kendi bilgisayarında çalıştırmak için (Neon yerine yerel Postgres).
+# Tek komutla deneme kurulumu (veritabanı + uygulama):
+#   docker compose up -d --build      → http://localhost:3000
+#   giriş: deneme@ornek.com / deneme123  (aşağıdaki DEMO_* ile değiştirilebilir)
+#
+# Kendi sorularını eklemek: JSON dosyalarını content/sorular/<sinav>/ içine koy, sonra
+#   docker compose restart web        (açılışta sorular yeniden aktarılır)
+#
+# Sadece veritabanı (uygulamayı bilgisayarında pnpm dev ile çalıştırırken):
 #   docker compose up -d db
 #   apps/web/.env.local → DATABASE_URL=postgresql://yds:yds@localhost:5432/yds
-# Not: Uygulamanın kendisi için (web servisi) Dockerfile, pratik ekranı tamamlanınca eklenecek.
 services:
   db:
     image: postgres:17-alpine
@@ -18,6 +24,25 @@ services:
       test: ["CMD-SHELL", "pg_isready -U yds"]
       interval: 5s
       retries: 10
+
+  web:
+    build: ./apps/web
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://yds:yds@db:5432/yds
+      BETTER_AUTH_URL: http://localhost:3000
+      # Yalnızca kendi bilgisayarında deneme için. İnternete açacaksan mutlaka değiştir.
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-yerel-deneme-anahtari-internete-acarsan-degistir}
+      CONTENT_DIR: /content
+      DEMO_EMAIL: ${DEMO_EMAIL:-deneme@ornek.com}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-deneme123}
+    volumes:
+      - ./content:/content:ro    # sorular: content/sorular varsa onlar, yoksa content/ornek
+    ports:
+      - "127.0.0.1:3000:3000"
 
 volumes:
   yds-db:

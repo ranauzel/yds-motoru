@@ -1,6 +1,6 @@
 // Oturum verisi için sunucu tarafı sorgular. Sadece sunucu bileşenleri ve server action'lar kullanır.
 import { and, desc, eq, gte, isNull } from "drizzle-orm";
-import { loadQuestions } from "@/lib/content/load";
+import { getQuestionsByIds } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
 import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
 import type { AnswerRecord, OptionKey, Snapshot } from "./session-machine";
@@ -29,7 +29,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
   const row = await getOwnedSession(userId, id);
   if (!row) return { ok: false, reason: "not_found" };
 
-  const byId = new Map((await loadQuestions()).map((q) => [q.id, q]));
+  const byId = await getQuestionsByIds(row.questionIds);
   const questions = row.questionIds.map((qid) => byId.get(qid));
   if (questions.some((q) => !q)) return { ok: false, reason: "content_changed" };
 

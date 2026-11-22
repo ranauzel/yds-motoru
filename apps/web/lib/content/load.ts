@@ -1,4 +1,4 @@
-// Sunucu tarafı içerik yükleyici: content/sorular/**/*.json dosyalarını okur ve doğrular.
+// İçerik dosyası yükleyici: content/sorular/**/*.json dosyalarını okur ve doğrular (content:import ve testler kullanır).
 import { existsSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -10,7 +10,7 @@ export function resolveContentDir(root: string): string {
 }
 
 export const contentDir = () =>
-  process.env.CONTENT_DIR ?? resolveContentDir(path.resolve(process.cwd(), "..", "..", "content"));
+  resolveContentDir(process.env.CONTENT_DIR ?? path.resolve(process.cwd(), "..", "..", "content"));
 
 export async function loadQuestionFiles(dir = contentDir()): Promise<QuestionFile[]> {
   const root = path.join(dir, "sorular");

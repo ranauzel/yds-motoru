@@ -2,7 +2,7 @@
 // Pratik oturumu server action'ları. Hepsi oturum sahibini doğrular ve tekrar gönderime dayanıklıdır.
 import { and, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { loadQuestions } from "@/lib/content/load";
+import { getAllQuestions, getQuestion } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
 import { gradeAnswer } from "@/lib/domain/sm2";
 import { requireUser } from "@/lib/session";
@@ -27,10 +27,10 @@ const byId = (id: string) => eq(practiceSessions.id, id);
 
 export async function startSession(): Promise<void> {
   const user = await requireUser();
+  const questionIds = pickSessionQuestions(await getAllQuestions());
+  if (!questionIds.length) redirect("/"); // henüz soru aktarılmamış
   const id = crypto.randomUUID();
-  await db.insert(practiceSessions).values({
-    id, userId: user.id, questionIds: pickSessionQuestions(await loadQuestions()),
-  });
+  await db.insert(practiceSessions).values({ id, userId: user.id, questionIds });
   redirect(`/oturum/${id}`);
 }
 
@@ -39,7 +39,7 @@ export async function recordAnswer(sessionId: string, questionId: string, a: Ans
   if (!o || !o.row.questionIds.includes(questionId)) return NOT_FOUND;
   const { user } = o;
   if (!OPTION_KEYS.includes(a?.choice)) return { ok: false, error: "invalid" };
-  const q = (await loadQuestions()).find((x) => x.id === questionId);
+  const q = await getQuestion(questionId);
   if (!q) return NOT_FOUND;
 
   const correct = a.choice === q.answer;

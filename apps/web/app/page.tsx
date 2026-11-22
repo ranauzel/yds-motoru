@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { startSession } from "@/features/session/actions";
 import { latestUnfinishedSession } from "@/features/session/server";
-import { loadQuestions } from "@/lib/content/load";
+import { getAllQuestions } from "@/lib/content/repo";
 import { requireUser } from "@/lib/session";
 import { SignOutButton } from "./sign-out-button";
 
@@ -38,7 +38,13 @@ async function Greeting() {
 
 async function SessionSummary() {
   const user = await requireUser();
-  const [questions, open] = await Promise.all([loadQuestions(), latestUnfinishedSession(user.id)]);
+  const [questions, open] = await Promise.all([getAllQuestions(), latestUnfinishedSession(user.id)]);
+  if (!questions.length)
+    return (
+      <p className="mt-3 text-sm text-muted">
+        Henüz soru yok. Soruları aktarmak için <code>apps/web</code> içinde <code>pnpm content:import</code> çalıştır.
+      </p>
+    );
   const warmupWords = new Set(questions.flatMap((q) => q.vocab.filter((v) => v.warmup).map((v) => v.word)));
   const primary = "flex min-h-12 w-full items-center justify-center rounded-xl bg-accent px-4 font-semibold text-white";
   return (

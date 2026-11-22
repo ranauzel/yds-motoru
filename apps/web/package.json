@@ -14,7 +14,8 @@
     "db:studio": "drizzle-kit studio",
     "user:create": "tsx scripts/create-user.ts",
     "db:check": "tsx scripts/db-check.ts",
-    "user:delete": "tsx scripts/delete-user.ts"
+    "user:delete": "tsx scripts/delete-user.ts",
+    "content:import": "tsx scripts/import-content.ts"
   },
   "dependencies": {
     "better-auth": "^1.7.26",

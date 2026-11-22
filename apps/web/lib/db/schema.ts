@@ -1,8 +1,9 @@
-// Kullanıcı verisi (hesap + ilerleme) — Postgres'te durur.
-// İçerik (sorular, kelimeler, kartlar) ise repo kökündeki content/ klasöründeki JSON dosyalarındadır.
+// Postgres şeması: hesaplar, çalışma verisi ve sorular.
+// Sorular content/ altındaki JSON dosyalarında yazılır, `pnpm content:import` ile questions tablosuna aktarılır.
 import {
-  boolean, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, serial, text, timestamp, uniqueIndex,
+  boolean, date, index, integer, jsonb, pgEnum, pgTable, primaryKey, real, serial, text, timestamp, uniqueIndex,
 } from "drizzle-orm/pg-core";
+import type { Question } from "../content/schema";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () => timestamp("updated_at", { withTimezone: true }).notNull().defaultNow();
@@ -54,6 +55,27 @@ export const verification = pgTable("verification", {
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
+
+// ── İçerik ───────────────────────────────────────────────────────────────────────────
+
+/** Sorular. Kaynak JSON dosyalarıdır; bu tabloya yalnızca `pnpm content:import` yazar. */
+export const questions = pgTable("questions", {
+  id: text("id").primaryKey(),                      // örn. "2021-yds-1-q28"
+  examId: text("exam_id").notNull(),
+  examName: text("exam_name").notNull(),
+  examDate: date("exam_date").notNull(),
+  number: integer("number").notNull(),
+  type: text("type").notNull(),
+  topic: text("topic").notNull(),
+  status: text("status").notNull(),                 // draft | reviewed
+  data: jsonb("data").$type<Question>().notNull(),  // sorunun tamamı (şemayla doğrulanmış)
+  hash: text("hash").notNull(),                     // içerik değişti mi diye
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}, (t) => [
+  index("questions_exam_number_idx").on(t.examId, t.number),
+  index("questions_type_topic_idx").on(t.type, t.topic),
+]);
 
 // ── Çalışma verisi (her satır bir kullanıcıya ait) ─────────────────────────────────
 
