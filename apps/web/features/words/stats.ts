@@ -1,5 +1,6 @@
 import type { Question } from "@/lib/content/schema";
 import type { ReviewRow } from "@/features/session/rules";
+import { todayKey } from "@/features/session/day";
 
 export type WordStatus = "learned" | "reviewing" | "new";
 export type WordRow = { word: string; tr: string; context?: string; status: WordStatus; dueAt: Date | null };
@@ -28,4 +29,11 @@ export function shouldRecordWordPractice(o: { review: ReviewRow | null; correct:
   if (!o.review) return true;
   if (o.review.dueAt < o.dueBefore) return false;
   return !o.correct;
+}
+
+/** Sonraki tekrar için göreli metin (İstanbul günleriyle): geçmiş ve bugün "bugün", sonra "yarın", "3 gün sonra". */
+export function dueLabel(dueAt: Date, now: Date): string {
+  const days = Math.round((Date.parse(`${todayKey(dueAt)}T00:00:00Z`) - Date.parse(`${todayKey(now)}T00:00:00Z`)) / 86_400_000);
+  if (days <= 0) return "bugün";
+  return days === 1 ? "yarın" : `${days} gün sonra`;
 }

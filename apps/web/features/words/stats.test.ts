@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ReviewRow } from "@/features/session/rules";
-import { classifyWords, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
+import { classifyWords, dueLabel, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
 
 const dueBefore = new Date("2026-11-23T21:00:00Z");
 const r = (itemId: string, dueAt: string, reps = 1, priority = false): ReviewRow => ({ itemId, dueAt: new Date(dueAt), reps, priority });
@@ -27,5 +27,15 @@ describe("shouldRecordWordPractice", () => {
     expect(shouldRecordWordPractice({ review: r("w", "2026-11-23T10:00:00Z"), correct: false, dueBefore })).toBe(false);
     expect(shouldRecordWordPractice({ review: r("w", "2026-11-30T00:00:00Z"), correct: true, dueBefore })).toBe(false);
     expect(shouldRecordWordPractice({ review: r("w", "2026-11-30T00:00:00Z"), correct: false, dueBefore })).toBe(true);
+  });
+});
+
+describe("dueLabel", () => {
+  const now = new Date("2026-11-23T10:00:00Z"); // İstanbul'da 23 Kasım 13:00
+  it("İstanbul gününe göre göreli metin", () => {
+    expect(dueLabel(new Date("2026-11-23T20:30:00Z"), now)).toBe("bugün"); // 23:30 İstanbul
+    expect(dueLabel(new Date("2026-11-23T21:00:00Z"), now)).toBe("yarın"); // 00:00 İstanbul, 24'ü
+    expect(dueLabel(new Date("2026-11-26T05:00:00Z"), now)).toBe("3 gün sonra");
+    expect(dueLabel(new Date("2026-11-20T05:00:00Z"), now)).toBe("bugün"); // geçmiş de bugün
   });
 });
