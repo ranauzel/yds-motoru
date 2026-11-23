@@ -6,7 +6,7 @@
 
 **Architecture:**
 - **Saf mantık (birim testli):**
-  - gün anahtarı ve gün sonu, seri hesabı (`day.ts`)
+  - gün anahtarı, gün sonu ve haftalık hedef (`day.ts`)
   - soru ve kelime seçimi (`rules.ts`)
   - kelime tekrarı bölümü (`session-machine.ts`, `REVIEW_BLOCK = -1` ile mevcut ısınma altyapısı üzerinden)
 - **Veritabanı tarafı (`server.ts` / `actions.ts`):** Oturum açılırken içerik bir kez seçilir ve `practice_sessions` satırına kaydedilir. Satırda yeni `day` ve `review_words` kolonları var, `(user_id, day)` benzersiz.
@@ -35,13 +35,13 @@
 
 1. **Aynı anda iki istek:** İki sekmeden aynı anda "Başla"ya basılır. Tek satır oluşur ve iki sekme de aynı oturuma gider. → Otomatik testi yok. Task 4 Step 4'te elle denenir.
 2. **Gün dönümü:** Gece 00:00'dan sonra açılan sayfa, bugünün yeni oturumunu gösterir. Dünün yarım kalan oturumu ana sayfada görünmez. → `todayKey` sınır testi Task 1'de var. Ana sayfa davranışı Task 4 Step 4'te elle denenir.
-3. **Sadece kelime olan oturum:** Önce kelime tekrarı, sonra özet gelir. Oturum "bitti" sayılır ve seri artar. → Durum makinesi testi Task 2'de var. Sunucuda `finishedAt` yazılması Task 4 Step 4'te elle denenir.
+3. **Sadece kelime olan oturum:** Önce kelime tekrarı, sonra özet gelir. Oturum "bitti" sayılır ve haftalık hedefe sayılır. → Durum makinesi testi Task 2'de var. Sunucuda `finishedAt` yazılması Task 4 Step 4'te elle denenir.
 4. **Kelime tekrarında "Atla":** Bölüm biter ve sorulara geçilir. Sayfa yeniden açılınca tekrar bölümü bir daha gösterilmez. → Task 2'de test var.
 5. **Görünmeyen review kaydı:** Silinmiş ya da başkasına ait bir soruya ait `review` satırı seçime girmez. → Task 1'de test var.
 
 ---
 
-### Task 1: Gün, seri ve seçim fonksiyonları (saf)
+### Task 1: Gün, haftalık hedef ve seçim fonksiyonları (saf)
 
 **Files:**
 - Create: `apps/web/features/session/day.ts`
@@ -53,9 +53,10 @@
 - Produces (`day.ts`):
   - `todayKey(now: Date): string`: İstanbul'a göre `YYYY-MM-DD`. Bunun için `Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Istanbul" })` kullanılır.
   - `dayEnd(now: Date): Date`: İstanbul'da ertesi günün 00:00 anı. Türkiye sabit UTC+3 olduğu için şu şekilde hesaplanır: `new Date(\`${ertesiGünKey}T00:00:00+03:00\`)`.
-  - `streakDays(finishedDays: string[], today: string): number`
-    - Bugün bitmişse sayım bugünden geriye doğru yapılır, bitmemişse dünden geriye doğru.
-    - Ardışık günler sayılır, ilk boşlukta sayım durur.
+  - `export const WEEKLY_GOAL = 5`
+  - `weekDaysDone(finishedDays: string[], today: string): number`
+    - `today` gününün içinde bulunduğu Pazartesi–Pazar haftasındaki farklı bitmiş günleri sayar.
+    - Affedici seri (TASARIM §8): kaçırılan gün hiçbir şeyi sıfırlamaz.
 - Produces (`rules.ts`):
   - `export type ReviewRow = { itemId: string; dueAt: Date; priority: boolean; reps: number }`
   - `export const DAILY_QUESTIONS = 10, MAX_DUE_QUESTIONS = 6, DAILY_REVIEW_WORDS = 15`
@@ -76,11 +77,13 @@ it("todayKey İstanbul gününe göre: UTC 21:30 ertesi gün, 20:59 aynı gün",
 it("dayEnd İstanbul'da ertesi günün 00:00'ı", () => {
   expect(dayEnd(new Date("2026-11-23T08:00:00+03:00")).toISOString()).toBe("2026-11-23T21:00:00.000Z");
 });
-it("seri: bugün bitmişse bugünden, bitmemişse dünden geriye ardışık günler", () => {
-  expect(streakDays(["2026-11-21", "2026-11-22", "2026-11-23"], "2026-11-23")).toBe(3);
-  expect(streakDays(["2026-11-21", "2026-11-22"], "2026-11-23")).toBe(2);
-  expect(streakDays(["2026-11-20", "2026-11-22", "2026-11-23"], "2026-11-23")).toBe(2);
-  expect(streakDays([], "2026-11-23")).toBe(0);
+// 2026-11-23 Pazartesi, 2026-11-29 Pazar, 2026-11-30 Pazartesi
+it("haftalık hedef: yalnızca bu haftanın (Pzt–Paz) bitmiş günleri sayılır", () => {
+  expect(weekDaysDone(["2026-11-22", "2026-11-23", "2026-11-25"], "2026-11-26")).toBe(2); // 22 Kasım önceki hafta
+  expect(weekDaysDone(["2026-11-23", "2026-11-29"], "2026-11-29")).toBe(2);
+  expect(weekDaysDone(["2026-11-23", "2026-11-29"], "2026-11-30")).toBe(0); // yeni hafta
+  expect(weekDaysDone(["2026-11-24", "2026-11-24"], "2026-11-24")).toBe(1); // aynı gün bir kez
+  expect(weekDaysDone([], "2026-11-24")).toBe(0);
 });
 ```
 
@@ -136,7 +139,7 @@ Expected: Bütün testler PASS, tsc çıkış kodu 0.
 
 ```bash
 git add features/session/day.ts features/session/day.test.ts features/session/rules.ts features/session/rules.test.ts features/session/server.ts features/session/actions.ts
-git commit -m "Günlük oturum: gün anahtarı, seri ve soru/kelime seçimi"
+git commit -m "Günlük oturum: gün anahtarı, haftalık hedef ve soru/kelime seçimi"
 ```
 
 ---
@@ -154,7 +157,7 @@ git commit -m "Günlük oturum: gün anahtarı, seri ve soru/kelime seçimi"
   - `WARM_MAX = 8`
   - **`Snapshot` tipine eklenecek alanlar:**
     - `reviewVocab: Question["vocab"]`: bugünün tekrar kelimeleri, sırasıyla, anlamlarıyla birlikte.
-    - `streak: number`
+    - `weekDays: number`: bu hafta bitmiş gün sayısı
     - `newLeft: number`: havuzda kalan yeni soru sayısı.
   - **`buildWarmItems`:**
     - `out[REVIEW_BLOCK]` girdisini de üretir. Şıklar, mevcut kuralla doğru anlam ve diğer anlamlardan 3 tane olacak şekilde oluşturulur. Anlam havuzu soru kelimeleri ile `reviewVocab` girdilerinin birleşimidir.
@@ -207,7 +210,7 @@ Expected: Yeni testler FAIL, eskiler PASS.
 
 - [ ] **Step 3: `session-machine.ts` değişikliklerini yap.**
 
-Snapshot'a eklenen alanlar Task 3'te `loadSnapshot` tarafından doldurulacak. O zamana kadar tip kontrolünün yeşil kalması için `server.ts` içindeki `loadSnapshot` dönüşüne geçici olarak `reviewVocab: [], streak: 0, newLeft: 0` eklenir.
+Snapshot'a eklenen alanlar Task 3'te `loadSnapshot` tarafından doldurulacak. O zamana kadar tip kontrolünün yeşil kalması için `server.ts` içindeki `loadSnapshot` dönüşüne geçici olarak `reviewVocab: [], weekDays: 0, newLeft: 0` eklenir.
 
 - [ ] **Step 4: Testleri çalıştır**
 
@@ -238,7 +241,7 @@ git commit -m "Günlük oturum: durum makinesinde kelime tekrarı bölümü"
 
 **Interfaces:**
 - Consumes:
-  - Task 1: `todayKey`, `dayEnd`, `streakDays`, `pickDailyQuestions`, `pickReviewWords`, `vocabByWord`, sabitler
+  - Task 1: `todayKey`, `dayEnd`, `weekDaysDone`, `WEEKLY_GOAL`, `pickDailyQuestions`, `pickReviewWords`, `vocabByWord`, sabitler
   - Task 2: `Snapshot` yeni alanları, `REVIEW_BLOCK`
 - Produces (`server.ts`):
   - `planToday(userId: string, now: Date): Promise<{ questionIds: string[]; reviewWords: string[] }>`
@@ -246,7 +249,7 @@ git commit -m "Günlük oturum: durum makinesinde kelime tekrarı bölümü"
   - `getTodaySession(userId: string, day: string): Promise<PracticeSessionRow | null>`
   - `loadSnapshot`: ek olarak şunları doldurur:
     - `reviewVocab`: `vocabByWord` haritasından, `row.reviewWords` sırasıyla.
-    - `streak`: kullanıcının `finishedAt` dolu satırlarının `day` değerleri üzerinden `streakDays(…, todayKey(new Date()))`.
+    - `weekDays`: kullanıcının `finishedAt` dolu satırlarının `day` değerleri üzerinden `weekDaysDone(…, todayKey(new Date()))`.
     - `newLeft`: görünür sorulardan `review_items` kaydı olmayanların sayısı.
   - `latestUnfinishedSession` silinir.
 - Produces (`actions.ts`):
@@ -291,25 +294,26 @@ git commit -m "Günlük oturum: gün kolonu, günün oturumunu açma, snapshot e
 ### Task 4: Ana sayfa, özet ekranı ve elle deneme
 
 **Files:**
+- Modify: `apps/web/app/globals.css` (animasyonlar)
 - Modify: `apps/web/app/page.tsx`
 - Modify: `apps/web/features/session/components/screens.tsx`
 - Modify: `apps/web/app/oturum/[id]/page.tsx`
 
 **Interfaces:**
-- Consumes: Task 3'teki `openTodaySession`, `recreateTodaySession`, `getTodaySession`, `planToday`; Task 1'deki `todayKey`; Task 2'deki `summarize` ek alanları ve Snapshot'taki `streak` ile `newLeft`.
+- Consumes: Task 3'teki `openTodaySession`, `recreateTodaySession`, `getTodaySession`, `planToday`; Task 1'deki `todayKey`; Task 2'deki `summarize` ek alanları ve Snapshot'taki `weekDays` ile `newLeft`.
 
 **Davranış (spec §5.5, §5.6):**
 - **Ana sayfadaki "Bugünün oturumu" kartı:**
   1. **Satır yok, plan dolu:** "Bugün: N kelime, M soru" ve **Başla** düğmesi (`form action={openTodaySession}`). Sayılar `planToday` ile hesaplanır. Bu durumda satır oluşturulmaz.
   2. **Satır var, bitmemiş:** "Devam et (pozisyon/soru sayısı)" bağlantısı. Soru sayısı 0 ise "Devam et (kelime tekrarı)" yazar.
-  3. **Satır bitmiş:** "Bugünün oturumu tamam" mesajı, doğru sayısı, seri, "Yarın yeni oturum açılacak" bilgisi ve "Gözden geçir" bağlantısı (oturum URL'si). Doğru sayısı için bugünün `attempts` kayıtlarındaki `correct` alanı sayılır.
+  3. **Satır bitmiş:** "Bugünün oturumu tamam" mesajı, doğru sayısı, "Bu hafta X/5 gün", "Yarın yeni oturum açılacak" bilgisi ve "Gözden geçir" bağlantısı (oturum URL'si). Doğru sayısı için bugünün `attempts` kayıtlarındaki `correct` alanı sayılır.
   4. **Satır yok, plan boş:** "Bugün için tekrar ya da yeni soru yok."
   - "Yeni oturum başlat" bağlantısı kaldırılır. Mevcut "N soru hazır / ısınma havuzu" satırları korunur.
 - **Özet ekranı (`Summary`):**
   - "Yeni oturum" düğmesi kaldırılır.
   - Şu satırlar eklenir:
     - `reviewTotal > 0` ise: "Kelime tekrarı: X / Y biliniyor"
-    - "🔥 N gün üst üste" (`streak > 0` ise)
+    - Haftalık hedef halkası: "Bu hafta X/5 gün"
     - "Havuzda N yeni soru kaldı"
   - "Soruları gözden geçir" düğmesi kalır ama soru yoksa gizlenir.
 - **Kelime ekranı:** `Warmup` ve `WarmupDone` ekranlarında `block === -1` iken:
@@ -318,28 +322,42 @@ git commit -m "Günlük oturum: gün kolonu, günün oturumunu açma, snapshot e
   - düğme metni şöyle olur: soru varsa "Sorulara geç →", soru yoksa "Özete geç →".
 - **Oturum sayfasında `content_changed` durumu:** "Bugünün oturumunu yeniden oluştur" düğmesi gösterilir (`form action={recreateTodaySession}`). Satırın `day` değeri boşsa (eski oturum) düğme yerine yalnızca "Ana sayfaya dön" bağlantısı gösterilir.
 
-- [ ] **Step 1: Ekranları ve sayfaları değiştir**
+- [ ] **Step 1: Görsel taslak ve kullanıcı onayı (kod yazmadan önce)**
 
-- [ ] **Step 2: Kontroller**
+Kullanıcı görsel taslak istedi. Brainstorming skill'inin visual companion'ı (`skills/brainstorming/visual-companion.md`) ile tarayıcıda şu ekranların taslağı gösterilir: ana sayfa kartının 4 durumu, kelime tekrarı ekranı, kelime tekrarının bitişi ve yeni özet ekranı. Taslaklar telefon genişliğinde olur ve spec §5.7'deki animasyonlar açıklanır.
+
+Taslaklar ARAYUZ K1 (tek ana eylem), K6 (nazik geri bildirim) ve K8'e (başparmak bölgesi, 48px) göre kontrol edilir. Kullanıcı onaylamadan Step 2'ye geçilmez. Onayda yapılan değişiklikler bu planın altına not edilir.
+
+- [ ] **Step 2: Ekranları ve sayfaları onaylanan taslağa göre değiştir; spec §5.7'deki animasyonları CSS ile ekle**
+
+Animasyonlar `globals.css` içinde keyframe'ler ve Tailwind sınıflarıyla yapılır. Hepsi `@media (prefers-reduced-motion: reduce)` altında kapatılır. Yeni bağımlılık eklenmez.
+
+- [ ] **Step 3: Kontroller**
 
 Run: `pnpm vitest run; pnpm eslint .; pnpm tsc --noEmit`
 Expected: Bütün testler PASS, eslint ve tsc çıkış kodu 0. `grep -rn "startSession\|latestUnfinishedSession" app features` hiçbir sonuç döndürmez.
 
-- [ ] **Step 3: Migration'ı uygula ve uygulamayı aç**
+- [ ] **Step 4: Migration'ı uygula ve uygulamayı aç**
 
 Run: `pnpm db:migrate` (önce kullanıcıdan onay alınır: canlı Neon veritabanı), ardından `pnpm dev`
 Expected: Migration başarılı olur, uygulama http://localhost:3000 adresinde açılır.
 
-- [ ] **Step 4: Elle deneme (Review Focus 1–3)**
+- [ ] **Step 5: Elle deneme (Review Focus 1–3)**
   - **Kart:** Ana sayfa 1. durumu gösterir. İlk gün kelime ya da zamanı gelen soru yoksa "Bugün: 0 kelime, 10 soru" yazar.
   - **Çift açma:** İki sekmede aynı anda "Başla"ya basılır. İki sekme de aynı `/oturum/<id>` adresine gider. Veritabanında bugüne ait tek satır olduğu `pnpm db:studio` ya da tek seferlik bir sorgu ile doğrulanır.
   - **Akış:** Bir soru cevaplanır, ana sayfaya dönülür, kart "Devam et (1/10)" gösterir. Oturum bitirilir, kart 3. durumu ve "1 gün üst üste" bilgisini gösterir.
   - **Sadece kelime olan oturum:** Kullanıcının onayıyla geçici bir test hesabında, ya da bir sonraki gün denenir. Hesabın zamanı gelen kelimesi olup yeni ve zamanı gelen sorusu olmamalı. Bunu sağlamak zorsa, test sonrası silinecek bir test hesabında `review_items.due_at` değerleri elle geçmişe çekilir. Önce kelime tekrarı, sonra özet gelmeli, `finishedAt` yazılmalı.
   - **Gün dönümü:** Sistem saatini değiştirmek yerine, bugünün satırının `day` değeri test hesabında bir gün geriye alınır. Ana sayfa yeni günün 1. durumunu göstermeli.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 6: UI/UX kontrolü ve ekran görüntüleri**
+
+`ui-ux-pro-max` skill'i yüklenir ve yeni ekranlar onun kontrol listesiyle gözden geçirilir: kontrast, dokunma alanı, boş ve yükleniyor durumları, erişilebilirlik etiketleri, hareket. ARAYUZ kuralları önceliklidir.
+
+Ardından `run` skill'iyle uygulama açılır. Telefon (375px) ve masaüstü genişliğinde şu ekranların görüntüleri alınır: ana sayfa durumları, kelime tekrarı ve özet ekranı. Görüntüler kullanıcıya gösterilir. Bulunan sorunlar düzeltilir.
+
+- [ ] **Step 7: Commit**
 
 ```bash
-git add app/ features/session/components/
+git add app/globals.css app/ features/session/components/
 git commit -m "Günlük oturum: ana sayfa durumları, özet ekranı, kelime tekrarı metinleri"
 ```

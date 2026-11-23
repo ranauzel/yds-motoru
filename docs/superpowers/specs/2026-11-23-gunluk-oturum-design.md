@@ -141,8 +141,10 @@ pickReviewWords({ reviews, vocabByWord, dueBefore, size }): string[]
 
 Mevcut özet ekranına şunlar eklenir:
 - **Kelime:** tekrar edilen kelime sayısı ve kaçının bilindiği (`warmAnswers` içinden).
-- **Seri:** üst üste kaç gün oturumun bitirildiği. Bitmiş (`finishedAt` dolu) oturumların `day` değerlerinden sunucuda hesaplanır ve oturum yüklenirken Snapshot'a eklenir. Bugün dahildir.
-  - Çalışılacak hiçbir şey olmadığı için oturum açılmayan günler seriyi kırar. *Benim kararım. Sebep: kelimeler SM-2 ile sürekli geri geldiği için bu çok nadir olur. Geçmişteki boş günleri bilmek için ayrıca kayıt tutmak gerekirdi, buna değmez.*
+- **Haftalık hedef (affedici seri, TASARIM §8):** "Bu hafta X/5 gün". Bu hafta (İstanbul'a göre Pazartesi–Pazar) oturumu bitirilmiş gün sayısını gösterir, hedef 5 gündür.
+  - Bir gün kaçırmak hiçbir şeyi sıfırlamaz. Yeni hafta Pazartesi 0'dan başlar.
+  - Bitmiş (`finishedAt` dolu) oturumların `day` değerlerinden sunucuda hesaplanır ve oturum yüklenirken Snapshot'a eklenir.
+  - *Kullanıcının kararı: TASARIM §8'deki affedici seri ("haftada 5 gün hedefi; 1 gün kaçırınca sıfırlanmaz"). XP ve rozet yok.*
 - **Havuz:** "Havuzda X yeni soru kaldı."
 
 Son iki bilgi sunucuda hesaplanıp Snapshot'a eklenir, böylece durum makinesi saf kalır.
@@ -152,7 +154,7 @@ Son iki bilgi sunucuda hesaplanıp Snapshot'a eklenir, böylece durum makinesi s
 "Bugünün oturumu" kartı dört durumdan birini gösterir:
 1. **Bugünün oturumu henüz yok:** kartta "Bugün: N kelime, M soru" yazar ve bir **Başla** düğmesi bulunur. Sayılar seçim fonksiyonları çalıştırılarak hesaplanır, ama satır **oluşturulmaz**.
 2. **Oturum sürüyor:** "Devam et (3/10)" düğmesi görünür.
-3. **Oturum bitti:** "Bugünün oturumu tamam" mesajı, kısa bir özet (doğru sayısı ve seri) ve "Yarın yeni oturum açılacak" bilgisi görünür. Oturumu gözden geçirmek için bir bağlantı da bulunur.
+3. **Oturum bitti:** "Bugünün oturumu tamam" mesajı, kısa bir özet (doğru sayısı ve "Bu hafta X/5 gün") ve "Yarın yeni oturum açılacak" bilgisi görünür. Oturumu gözden geçirmek için bir bağlantı da bulunur.
 4. **Bugün çalışılacak bir şey yok** (seçim 0 kelime ve 0 soru döndürdü): "Bugün için tekrar ya da yeni soru yok" mesajı görünür.
 
 **Kaldırılanlar:**
@@ -161,6 +163,21 @@ Son iki bilgi sunucuda hesaplanıp Snapshot'a eklenir, böylece durum makinesi s
 - `latestUnfinishedSession`: yerini "bugünün oturumu" alır. `day` değeri boş olan eski bitmemiş oturumlar ana sayfada artık görünmez, ama URL'leriyle açılmaya devam eder.
 
 **İçerik değişince (`content_changed`):** Bugünün oturumundaki bir soru silinmişse oturum sayfası bir "Bugünün oturumunu yeniden oluştur" düğmesi gösterir. Bu düğme bugünün satırını silip `openTodaySession` fonksiyonunu yeniden çalıştırır. *Benim kararım. Sebep: günde tek oturum kuralı yüzünden kullanıcı aksi halde o gün çalışamazdı.* Satır silinince, oturuma bağlı `attempts` kayıtları cascade ile silinir. SM-2 kayıtları (`review_items`) ise korunur.
+
+### 5.7 Hareket ve geri bildirim (animasyon)
+
+- **İlke** (ARAYUZ §6, TASARIM §8): Animasyonlar bağlar ama baskı yaratmaz.
+  - Yalnızca CSS geçişleri ve keyframe'ler kullanılır, animasyon kütüphanesi eklenmez.
+  - `prefers-reduced-motion: reduce` açıkken bütün animasyonlar kapanır.
+  - Konfeti, sarsıntı, kırmızı yanıp sönme, XP ve rozet yok.
+- **Yerler:**
+  - **Şık seçimi:** Seçilen şık hafifçe öne çıkar (kısa ölçek/gölge geçişi).
+  - **Doğru cevap:** Kısa bir onay işareti çizilir.
+  - **Yanlış cevap:** Tuzak etiketi yumuşakça belirir.
+  - **Kelime tekrarı:** Kelimeler arasında kart kayma geçişi olur. Bilinen kelimede küçük bir "+1" görünür.
+  - **İlerleme çubuğu:** Akıcı biçimde dolar. Bu zaten var.
+  - **Oturum sonu:** Sakin bir kutlama yapılır. Onay işareti çizilir, doğru sayısı sayarak yükselir, haftalık hedef halkası ("X/5") dolar.
+- **Sıra:** Ekranlar kodlanmadan önce görsel taslak olarak kullanıcıya gösterilip onaylatılır. Uygulamadan sonra `ui-ux-pro-max` kontrol listesiyle gözden geçirilir. Telefon (375px) ve masaüstü ekran görüntüleriyle doğrulanır.
 
 ## 6. Testler
 
@@ -191,7 +208,7 @@ Saf fonksiyonlar için birim testleri:
   - bölüm boşken doğrudan soru ekranına geçilir
   - tekrar kelimeleri blok ısınmasında yeniden sorulmaz
   - kaldığı yerden devam edildiğinde doğru ekran açılır
-- **Seri hesabı:** ardışık günler, atlanmış bir gün, bugünün oturumu bitmemişken.
+- **Haftalık hedef:** aynı haftadaki bitmiş günler sayılır, önceki haftanınkiler sayılmaz, Pazartesi yeni hafta başlar, aynı gün iki kez sayılmaz.
 
 Veritabanına bağlı kısımlar (`openTodaySession`, çakışma durumu) için otomatik test yok, çünkü projede veritabanı testi altyapısı yok. Bu kısımlar elle denenir: iki sekmeden aynı anda "Başla"ya basılır, gün değişimi sistem saati ya da bir test parametresi ile denenir.
 
