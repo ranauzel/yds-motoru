@@ -1,4 +1,5 @@
 // Kelime tekrarı / ısınma, mola ve günün özeti ekranları.
+import Link from "next/link";
 import { Coffee, Languages } from "lucide-react";
 import { TipCard } from "@/features/dashboard/components/tip-card";
 import { TRAP_NAMES } from "@/lib/content/schema";
@@ -100,31 +101,43 @@ export function BreakView({ s, act }: { s: State; act: (a: Action) => void }) {
   );
 }
 
-/** Günün özeti. Ana eylem yok: günün işi bitti; gözden geçirme ikincil (ARAYUZ K1, TASARIM §8). */
-export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
+/**
+ * Günün özeti. Ana eylem yok: günün işi bitti; gözden geçirme ikincil (ARAYUZ K1, TASARIM §8).
+ * Serbest çalışmada (practice) haftalık hedef, havuz ve "yarın" satırı yok; ana eylem "Panoya dön" (spec §5.8).
+ */
+export function Summary({ s, act, mode = "daily" }: { s: State; act: (a: Action) => void; mode?: "daily" | "practice" }) {
   const r = summarize(s);
   const wrong = r.total - r.right;
+  const practice = mode === "practice";
   return (
     <>
       <Center>
         <CheckMark />
-        <div className="mt-2 text-sm text-muted">Günün özeti</div>
+        <div className="mt-2 text-sm text-muted">{practice ? "Çalışma özeti" : "Günün özeti"}</div>
         {r.total > 0 ? (
           <>
             <div className="text-5xl font-bold"><CountUp to={r.right} /> / {r.total}</div>
             <div className="text-sm text-muted">doğru</div>
           </>
         ) : (
-          <div className="mt-1 text-xl font-bold">Bugün kelime günüydü</div>
+          <div className="mt-1 text-xl font-bold">{practice ? "Kelime çalışması bitti" : "Bugün kelime günüydü"}</div>
         )}
       </Center>
-      <div className={`anim-fade-2 flex items-center gap-4 p-4 ${CARD}`}>
-        <WeekRing done={s.weekDays} />
-        <div className="text-sm leading-relaxed">
-          {r.reviewTotal > 0 && <>Kelime tekrarı: <b>{r.reviewKnown} / {r.reviewTotal}</b> biliniyor<br /></>}
-          Havuzda <b>{s.newLeft}</b> yeni soru kaldı
+      {practice ? (
+        r.reviewTotal > 0 && (
+          <div className={`anim-fade-2 p-4 text-center ${CARD}`}>
+            <b>{r.reviewKnown} / {r.reviewTotal}</b> kelimeyi bildin
+          </div>
+        )
+      ) : (
+        <div className={`anim-fade-2 flex items-center gap-4 p-4 ${CARD}`}>
+          <WeekRing done={s.weekDays} />
+          <div className="text-sm leading-relaxed">
+            {r.reviewTotal > 0 && <>Kelime tekrarı: <b>{r.reviewKnown} / {r.reviewTotal}</b> biliniyor<br /></>}
+            Havuzda <b>{s.newLeft}</b> yeni soru kaldı
+          </div>
         </div>
-      </div>
+      )}
       {r.traps.length > 0 && (
         <div className={`anim-fade-3 mt-3 p-4 ${CARD}`}>
           <b>Düştüğün tuzaklar</b>
@@ -142,12 +155,23 @@ export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
           </div>
         </>
       )}
-      {r.sureWrong > 0 && <p className="mt-4 text-sm text-muted">{r.sureWrong} soruda emin olduğun halde yanlış yaptın. Bunlar ilk tekrar edilecekler.</p>}
+      {!practice && r.sureWrong > 0 && <p className="mt-4 text-sm text-muted">{r.sureWrong} soruda emin olduğun halde yanlış yaptın. Bunlar ilk tekrar edilecekler.</p>}
       {r.total > 0 && <p className="mt-4 text-sm text-muted">Çeviriyi {r.glossCount} / {r.total} soruda açtın. Bu sayı zamanla düştükçe ilerlediğini göreceksin.</p>}
       {wrong === 0 && r.total > 0 && <p className="mt-4 text-center">Hiç tuzağa düşmedin. Harika iş! 🎯</p>}
-      <p className="mt-4 text-center text-sm text-muted">Yarın yeni oturum açılacak.</p>
-      {s.questions.length > 0 && (
-        <BottomBar><Button onClick={() => act({ type: "startReview" })}>Soruları gözden geçir</Button></BottomBar>
+      {practice ? (
+        <BottomBar>
+          {s.questions.length > 0 && <Button onClick={() => act({ type: "startReview" })}>Soruları gözden geçir</Button>}
+          <Link href="/" className="flex min-h-12 flex-1 items-center justify-center rounded-xl bg-accent px-4 text-base font-semibold text-white outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+            Panoya dön
+          </Link>
+        </BottomBar>
+      ) : (
+        <>
+          <p className="mt-4 text-center text-sm text-muted">Yarın yeni oturum açılacak.</p>
+          {s.questions.length > 0 && (
+            <BottomBar><Button onClick={() => act({ type: "startReview" })}>Soruları gözden geçir</Button></BottomBar>
+          )}
+        </>
       )}
     </>
   );

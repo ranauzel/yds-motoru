@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { practiceSend } from "@/features/practice/send";
 import { readSoundPref } from "@/features/ui/sound-pref";
+import { recordWordPractice } from "@/features/words/actions";
 import { advance, markBreakSeen, markWarmDone, recordAnswer, recordWarmup } from "../actions";
 import { celebrate } from "../celebrate";
 import { realFx } from "../fx";
@@ -16,19 +18,22 @@ import { BottomBar, Button, ProgressBar } from "./ui";
 
 // Isınma şıkları rastgele karıştırıldığı için akış yalnızca tarayıcıda kurulur (hidrasyon farkı olmasın).
 const subscribe = () => () => {};
-export function PracticeSession({ snapshot }: { snapshot: Snapshot }) {
+/** daily: günün oturumu (her şey kaydedilir). practice: serbest çalışma (yalnızca kelime cevabı yazılır, spec §5.8). */
+export type SessionMode = "daily" | "practice";
+export function PracticeSession({ snapshot, mode = "daily" }: { snapshot: Snapshot; mode?: SessionMode }) {
   const mounted = useSyncExternalStore(subscribe, () => true, () => false);
   if (!mounted) return <p className="py-10 text-center text-sm text-muted">Yükleniyor…</p>;
-  return <Flow snapshot={snapshot} />;
+  return <Flow snapshot={snapshot} mode={mode} />;
 }
 
-function Flow({ snapshot }: { snapshot: Snapshot }) {
+function Flow({ snapshot, mode }: { snapshot: Snapshot; mode: SessionMode }) {
   const [state, setState] = useState(() => initState(snapshot, Math.random, Date.now()));
   const stateRef = useRef(state);
   const [saveStatus, setSaveStatus] = useState<QueueStatus>("idle");
   const streak = useRef(0); // üst üste doğru (soru ya da kelime); yanlışta sıfırlanır
 
   const [queue] = useState(() => {
+    if (mode === "practice") return createSaveQueue((e: Effect) => practiceSend(e, recordWordPractice), { onStatus: setSaveStatus });
     const id = snapshot.sessionId;
     const send = (e: Effect) => {
       switch (e.kind) {
@@ -99,7 +104,7 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
   if (scr.kind === "warmup") body = <Warmup s={s} act={act} />;
   else if (scr.kind === "warmupDone") body = <WarmupDone s={s} act={act} />;
   else if (scr.kind === "break") body = <BreakView s={s} act={act} />;
-  else if (scr.kind === "summary") body = <Summary s={s} act={act} />;
+  else if (scr.kind === "summary") body = <Summary s={s} act={act} mode={mode} />;
   else {
     const i = scr.kind === "review" ? scr.i : s.position;
     const q = s.questions[i];
@@ -134,7 +139,7 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
   return (
     <>
       <div className="mb-3 flex items-center">
-        <Link href="/" aria-label="Oturumdan çık" className="-ml-3 grid size-12 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-accent-soft"><X className="size-6" aria-hidden="true" /></Link>
+        <Link href="/" aria-label={mode === "practice" ? "Çalışmadan çık" : "Oturumdan çık"} className="-ml-3 grid size-12 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-accent-soft"><X className="size-6" aria-hidden="true" /></Link>
       </div>
       {body}
       {saveStatus === "retrying" && (
