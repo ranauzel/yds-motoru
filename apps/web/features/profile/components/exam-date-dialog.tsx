@@ -48,8 +48,12 @@ export function ExamDateDialog({ initial, autoOpen, trigger }: { initial: string
 
   const save = () =>
     startTransition(async () => {
-      const res = await setExamDate(selected);
-      if (!res.ok) return setError(true);
+      try {
+        const res = await setExamDate(selected);
+        if (!res.ok) return setError(true);
+      } catch {
+        return setError(true); // sunucu hatası sayfayı düşürmesin; pencere açık kalır
+      }
       setError(false);
       setOpen(false);
       router.refresh();
@@ -57,8 +61,9 @@ export function ExamDateDialog({ initial, autoOpen, trigger }: { initial: string
 
   const today = fromKey(todayKey(new Date()));
 
+  // X, Escape ve dış tıklama da "Sonra" sayılır; Kaydet pencereyi kendi kapatır
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => (o ? setOpen(true) : later())}>
       {trigger && <DialogTrigger render={trigger} />}
       <DialogContent>
         <DialogHeader>
