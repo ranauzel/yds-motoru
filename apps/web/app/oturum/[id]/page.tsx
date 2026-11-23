@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { openTodaySession } from "@/features/session/actions";
+import Link from "next/link";
+import { recreateTodaySession } from "@/features/session/actions";
 import { PracticeSession } from "@/features/session/components/practice-session";
 import { loadSnapshot } from "@/features/session/server";
 import { requireUser } from "@/lib/session";
@@ -26,9 +27,13 @@ async function Session({ params }: { params: Promise<{ id: string }> }) {
     return (
       <div className="py-10 text-center">
         <p>Bu oturumun bazı soruları artık mevcut değil.</p>
-        <form action={openTodaySession} className="mt-6">
-          <button type="submit" className="min-h-12 rounded-xl bg-accent px-6 font-semibold text-white">Yeni oturum</button>
-        </form>
+        {res.daily ? (
+          <form action={recreateTodaySession} className="mt-6">
+            <button type="submit" className="min-h-12 rounded-xl bg-accent px-6 font-semibold text-white">Bugünün oturumunu yeniden oluştur</button>
+          </form>
+        ) : (
+          <Link href="/" className="mt-6 inline-block min-h-12 rounded-xl bg-accent px-6 font-semibold leading-[48px] text-white">Ana sayfaya dön</Link>
+        )}
       </div>
     );
   return <PracticeSession snapshot={res.snapshot} />;

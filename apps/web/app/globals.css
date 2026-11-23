@@ -42,3 +42,28 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
 }
+
+/* ── Hareket (ARAYUZ §6, spec §5.7): yalnızca CSS; "hareketi azalt" açıksa hiçbiri oynamaz. ── */
+@keyframes draw-check { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+@keyframes pop-in { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes ring-fill { from { stroke-dashoffset: 251.3; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes slide-in { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+@keyframes plus-float { 0% { opacity: 0; transform: translateY(4px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-14px); } }
+@keyframes ok-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.02); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: no-preference) {
+  .anim-check path { animation: draw-check .5s .15s ease-out both; }
+  .anim-check circle { animation: pop-in .35s ease-out both; }
+  .anim-ring { animation: ring-fill 1s .3s ease-out both; }
+  .anim-fade { animation: fade-up .4s ease-out both; }
+  .anim-fade-2 { animation: fade-up .4s .12s ease-out both; }
+  .anim-fade-3 { animation: fade-up .4s .24s ease-out both; }
+  .anim-slide { animation: slide-in .35s ease-out both; }
+  .anim-plus { animation: plus-float .9s .1s ease-out both; }
+  .anim-ok { animation: ok-pulse .4s ease-out both; }
+  .anim-press { transition: transform .12s ease-out, box-shadow .12s ease-out; }
+  .anim-press:active { transform: scale(.98); }
+}
+/* "+1" yalnızca hareketle anlamlı; hareket kapalıysa hiç görünmez. */
+@media (prefers-reduced-motion: reduce) { .anim-plus { display: none; } }

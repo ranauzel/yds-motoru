@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayEnd, todayKey, weekDaysDone } from "./day";
+import { dayEnd, todayKey, weekDaysDone, weekIndexes } from "./day";
 
 describe("gün", () => {
   it("todayKey İstanbul gününe göre: UTC 21:30 ertesi gün, 20:59 aynı gün", () => {
@@ -19,5 +19,14 @@ describe("gün", () => {
     expect(weekDaysDone(["2026-11-23", "2026-11-29"], "2026-11-30")).toBe(0); // yeni hafta
     expect(weekDaysDone(["2026-11-24", "2026-11-24"], "2026-11-24")).toBe(1); // aynı gün bir kez
     expect(weekDaysDone([], "2026-11-24")).toBe(0);
+  });
+});
+
+describe("weekIndexes", () => {
+  // 2026-11-23 Pazartesi
+  it("bu haftanın bitmiş günlerinin Pazartesi=0 indeksleri ve bugünün indeksi", () => {
+    expect(weekIndexes(["2026-11-22", "2026-11-23", "2026-11-25", "2026-11-25"], "2026-11-27"))
+      .toEqual({ done: [0, 2], today: 4 });
+    expect(weekIndexes([], "2026-11-29")).toEqual({ done: [], today: 6 });
   });
 });

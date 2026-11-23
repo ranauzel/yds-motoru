@@ -33,45 +33,48 @@ async function reviewRows(userId: string, kind: "word" | "question"): Promise<Re
 }
 
 /** Bugünün içeriği: zamanı gelen + yeni sorular ve zamanı gelen kelimeler (spec §5.3–5.4). Satır oluşturmaz. */
-export async function planToday(userId: string, now: Date): Promise<{ questionIds: string[]; reviewWords: string[] }> {
+export async function planToday(userId: string, now: Date): Promise<{ questionIds: string[]; reviewWords: string[]; dueCount: number }> {
   const [questions, questionReviews, wordReviews] = await Promise.all([
     getAllQuestions(userId), reviewRows(userId, "question"), reviewRows(userId, "word"),
   ]);
   const dueBefore = dayEnd(now);
+  const questionIds = pickDailyQuestions({
+    questionIds: questions.map((q) => q.id), reviews: questionReviews, dueBefore, size: DAILY_QUESTIONS, maxDue: MAX_DUE_QUESTIONS,
+  });
+  const reviewed = new Set(questionReviews.map((r) => r.itemId));
   return {
-    questionIds: pickDailyQuestions({
-      questionIds: questions.map((q) => q.id), reviews: questionReviews, dueBefore, size: DAILY_QUESTIONS, maxDue: MAX_DUE_QUESTIONS,
-    }),
+    questionIds,
+    dueCount: questionIds.filter((id) => reviewed.has(id)).length,
     reviewWords: pickReviewWords({
       reviews: wordReviews, known: new Set(vocabByWord(questions).keys()), dueBefore, size: DAILY_REVIEW_WORDS,
     }),
   };
 }
 
-/** Bu hafta oturumu bitirilmiş gün sayısı (affedici seri). */
-export async function weekDaysFor(userId: string, now: Date): Promise<number> {
+/** Oturumu bitirilmiş günler ("YYYY-MM-DD"). Haftalık hedef (affedici seri) bunlardan hesaplanır. */
+export async function finishedDays(userId: string): Promise<string[]> {
   const rows = await db.select({ day: practiceSessions.day }).from(practiceSessions)
     .where(and(eq(practiceSessions.userId, userId), isNotNull(practiceSessions.finishedAt), isNotNull(practiceSessions.day)));
-  return weekDaysDone(rows.map((r) => r.day!), todayKey(now));
+  return rows.map((r) => r.day!);
 }
 
 export async function loadSnapshot(userId: string, id: string): Promise<
-  { ok: true; snapshot: Snapshot } | { ok: false; reason: "not_found" | "content_changed" }
+  { ok: true; snapshot: Snapshot } | { ok: false; reason: "not_found" } | { ok: false; reason: "content_changed"; daily: boolean }
 > {
   const row = await getOwnedSession(userId, id);
   if (!row) return { ok: false, reason: "not_found" };
 
   const byId = await getQuestionsByIds(userId, row.questionIds);
   const questions = row.questionIds.map((qid) => byId.get(qid));
-  if (questions.some((q) => !q)) return { ok: false, reason: "content_changed" };
+  if (questions.some((q) => !q)) return { ok: false, reason: "content_changed", daily: row.day !== null };
 
-  const [rows, known, allQuestions, reviewedQuestions, weekDays] = await Promise.all([
+  const [rows, known, allQuestions, reviewedQuestions, doneDays] = await Promise.all([
     db.select().from(attempts).where(and(eq(attempts.sessionId, id), eq(attempts.userId, userId))),
     db.select({ itemId: reviewItems.itemId }).from(reviewItems)
       .where(and(eq(reviewItems.userId, userId), eq(reviewItems.kind, "word"), gte(reviewItems.reps, 2))), // sm2.isKnown
     getAllQuestions(userId),
     reviewRows(userId, "question"),
-    weekDaysFor(userId, new Date()),
+    finishedDays(userId),
   ]);
 
   const answers: Record<string, AnswerRecord> = {};
@@ -95,7 +98,8 @@ export async function loadSnapshot(userId: string, id: string): Promise<
       answers,
       knownWords: known.map((k) => k.itemId),
       reviewVocab: row.reviewWords.flatMap((w) => vocab.get(w) ?? []),
-      weekDays,
+      // Özet yalnızca oturum bitince görünür: bu oturumun günü bitmiş sayılır (henüz yazılmamış olsa da).
+      weekDays: weekDaysDone(row.day ? [...doneDays, row.day] : doneDays, todayKey(new Date())),
       newLeft: allQuestions.filter((q) => !reviewed.has(q.id)).length,
     },
   };
@@ -109,4 +113,11 @@ export async function upsertReview(userId: string, kind: "word" | "question", it
   const values = { ...next, lastReviewedAt: now };
   await db.insert(reviewItems).values({ userId, kind, itemId, ...values })
     .onConflictDoUpdate({ target: [reviewItems.userId, reviewItems.kind, reviewItems.itemId], set: values });
+}
+
+/** Bir oturumda doğru cevaplanan soru sayısı (ana sayfadaki "bugün tamam" özeti için). */
+export async function correctCount(userId: string, sessionId: string): Promise<number> {
+  const rows = await db.select({ correct: attempts.correct }).from(attempts)
+    .where(and(eq(attempts.sessionId, sessionId), eq(attempts.userId, userId)));
+  return rows.filter((r) => r.correct).length;
 }
