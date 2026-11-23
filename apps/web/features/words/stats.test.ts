@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { ReviewRow } from "@/features/session/rules";
-import { classifyWords, dueLabel, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
+import type { Question } from "@/lib/content/schema";
+import { classifyWords, dueLabel, todayExcludedWords, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
 
 const dueBefore = new Date("2026-11-23T21:00:00Z");
 const r = (itemId: string, dueAt: string, reps = 1, priority = false): ReviewRow => ({ itemId, dueAt: new Date(dueAt), reps, priority });
@@ -37,5 +38,21 @@ describe("dueLabel", () => {
     expect(dueLabel(new Date("2026-11-23T21:00:00Z"), now)).toBe("yarın"); // 00:00 İstanbul, 24'ü
     expect(dueLabel(new Date("2026-11-26T05:00:00Z"), now)).toBe("3 gün sonra");
     expect(dueLabel(new Date("2026-11-20T05:00:00Z"), now)).toBe("bugün"); // geçmiş de bugün
+  });
+});
+
+describe("todayExcludedWords", () => {
+  const q = (id: string, vocab: Question["vocab"]) => ({ id, vocab }) as Question;
+  const questions = [
+    q("q1", [{ word: "a", tr: "A", warmup: true }, { word: "b", tr: "B" }]),
+    q("q2", [{ word: "c", tr: "C", warmup: true }]),
+    q("q3", [{ word: "d", tr: "D", warmup: true }]),
+  ];
+  it("bugünün oturumu yoksa hiçbir şey hariç değil", () => {
+    expect(todayExcludedWords(questions, null).size).toBe(0);
+  });
+  it("tekrar kelimeleri ve bugünün sorularındaki ısınma kelimeleri hariç; ısınmasız ve başka sorudaki kelimeler değil", () => {
+    const ex = todayExcludedWords(questions, { questionIds: ["q1", "q2"], reviewWords: ["r"] });
+    expect([...ex].sort()).toEqual(["a", "c", "r"]);
   });
 });

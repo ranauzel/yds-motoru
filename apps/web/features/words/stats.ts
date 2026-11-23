@@ -15,6 +15,19 @@ export function classifyWords(vocab: Map<string, Question["vocab"][number]>, rev
   });
 }
 
+/**
+ * Bugün serbest çalışmada not verilmeyecek kelimeler (aynı kelime aynı gün iki kez notlanmasın, spec §5.6):
+ * bugünün oturumunun tekrar kelimeleri ve oturum sorularındaki ısınma (`warmup: true`) kelimeleri.
+ */
+export function todayExcludedWords(questions: Question[], today: { questionIds: string[]; reviewWords: string[] } | null): Set<string> {
+  const out = new Set<string>();
+  if (!today) return out;
+  for (const w of today.reviewWords) out.add(w);
+  const ids = new Set(today.questionIds);
+  for (const q of questions) if (ids.has(q.id)) for (const v of q.vocab) if (v.warmup) out.add(v.word);
+  return out;
+}
+
 /** Serbest çalışma: seçili durumdan hariç tutulanlar ve bugün zamanı gelenler çıkar; tekrarda sekmesi dueAt artan. */
 export function pickWordPractice(o: { words: WordRow[]; status: WordStatus; excluded: Set<string>; dueBefore: Date; size: number }): string[] {
   const list = o.words.filter(

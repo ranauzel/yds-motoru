@@ -9,7 +9,7 @@ import { vocabByWord, WARMUP_GRADE } from "@/features/session/rules";
 import type { ActionResult } from "@/features/session/actions";
 import { getTodaySession, upsertReview } from "@/features/session/server";
 import { WordPracticeInput } from "./inputs";
-import { shouldRecordWordPractice } from "./stats";
+import { shouldRecordWordPractice, todayExcludedWords } from "./stats";
 
 const { reviewItems } = schema;
 const OK: ActionResult = { ok: true };
@@ -23,7 +23,7 @@ export async function recordWordPractice(word: string, correct: boolean): Promis
 
   const [questions, today] = await Promise.all([getAllQuestions(user.id), getTodaySession(user.id, todayKey(now))]);
   if (!vocabByWord(questions).has(input.data.word)) return INVALID;
-  if (today?.reviewWords.includes(input.data.word)) return INVALID; // bugünün oturumunda sorulacak
+  if (todayExcludedWords(questions, today).has(input.data.word)) return INVALID; // bugünün oturumunda (tekrar ya da ısınma) sorulacak
 
   const [review] = await db.select({ itemId: reviewItems.itemId, dueAt: reviewItems.dueAt, priority: reviewItems.priority, reps: reviewItems.reps })
     .from(reviewItems)

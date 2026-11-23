@@ -7,7 +7,7 @@ import { vocabByWord } from "@/features/session/rules";
 import { getTodaySession } from "@/features/session/server";
 import type { Snapshot } from "@/features/session/session-machine";
 import { pickTrapPractice } from "@/features/traps/stats";
-import { classifyWords, pickWordPractice } from "@/features/words/stats";
+import { classifyWords, pickWordPractice, todayExcludedWords } from "@/features/words/stats";
 import {
   fellIdsFor, trapPracticeSnapshot, TRAP_PRACTICE_SIZE, wordPracticeSnapshot, WORD_PRACTICE_SIZE, type PracticeParams,
 } from "./snapshot";
@@ -27,7 +27,7 @@ export async function practiceSnapshot(userId: string, params: PracticeParams, n
     const vocab = vocabByWord(questions);
     const words = pickWordPractice({
       words: classifyWords(vocab, reviews), status: params.sekme,
-      excluded: new Set(today?.reviewWords ?? []), dueBefore: dayEnd(now), size: WORD_PRACTICE_SIZE,
+      excluded: todayExcludedWords(questions, today), dueBefore: dayEnd(now), size: WORD_PRACTICE_SIZE,
     });
     return wordPracticeSnapshot(words.flatMap((w) => vocab.get(w) ?? []), [...new Set([...vocab.values()].map((v) => v.tr))]);
   }
