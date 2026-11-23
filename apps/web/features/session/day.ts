@@ -12,7 +12,7 @@ export function todayKey(now: Date): string {
 }
 
 /** "YYYY-MM-DD" gününe n gün ekler (takvim hesabı, saat dilimi yok). */
-function addDays(key: string, n: number): string {
+export function addDays(key: string, n: number): string {
   return new Date(Date.parse(`${key}T00:00:00Z`) + n * DAY_MS).toISOString().slice(0, 10);
 }
 
@@ -24,7 +24,7 @@ export function dayEnd(now: Date): Date {
 /** Affedici seri (TASARIM §8): haftada 5 gün hedefi; kaçırılan gün hiçbir şeyi sıfırlamaz. */
 export const WEEKLY_GOAL = 5;
 
-const weekdayIndex = (key: string) => (new Date(`${key}T00:00:00Z`).getUTCDay() + 6) % 7; // Pazartesi = 0
+export const weekdayIndex = (key: string) => (new Date(`${key}T00:00:00Z`).getUTCDay() + 6) % 7; // Pazartesi = 0
 
 /** today'in Pazartesi–Pazar haftasında oturumu bitirilmiş günlerin indeksleri (sıralı, tekil) ve bugünün indeksi. */
 export function weekIndexes(finishedDays: string[], today: string): { done: number[]; today: number } {
