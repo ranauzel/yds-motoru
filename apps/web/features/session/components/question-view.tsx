@@ -8,6 +8,8 @@ import { CARD, TrapChip, TrapWarning } from "./ui";
 
 const DIRECTIVE: Partial<Record<Question["type"], React.ReactNode>> = {
   cumle_tamamlama: <><b className="text-text">Önce bağlacı bul</b>, yönünü belirle (zıtlık / neden / ek / koşul). Sonra zaman ve zamir uyumuna bak.</>,
+  kelime: <><b className="text-text">Boşluğun yanına bak</b>: edat ya da kalıp var mı? Sonra cümlenin yönünü ve tonunu belirle.</>,
+  dilbilgisi: <><b className="text-text">Önce şıkları karşılaştır</b>: neyi test ediyor (zaman, bağlaç, edat…)? Sonra cümledeki ipucunu bul.</>,
 };
 
 type Props = { q: Question; answer?: AnswerRecord; ui: Ui; act: (a: Action) => void; readOnly?: boolean; topTrap?: Snapshot["topTrap"] };

@@ -19,6 +19,18 @@ describe("konu haritası", () => {
     }
   });
 
+  it("kelime ve dilbilgisi konuları haritadaki kodlarla, her tarif 2–4 adım", () => {
+    expect(TOPIC_MAP.kelime.map((t) => t.code)).toEqual(["esdizim", "baglam_yonu", "phrasal_verb", "benzer_kelime", "anlam"]);
+    expect(TOPIC_MAP.dilbilgisi.map((t) => t.code)).toEqual([
+      "tense", "modal", "edilgen", "kosul", "relative", "noun_clause", "gerund_inf", "edat", "baglac", "karsilastirma",
+    ]);
+    for (const t of [...TOPIC_MAP.kelime, ...TOPIC_MAP.dilbilgisi]) {
+      expect(t.steps.length).toBeGreaterThanOrEqual(2);
+      expect(t.steps.length).toBeLessThanOrEqual(4);
+      expect(t.traps.length).toBeGreaterThan(0);
+    }
+  });
+
   it("topicDef bilinmeyen konuda undefined, topicKey tip:konu", () => {
     expect(topicDef("cumle_tamamlama", "zitlik")?.name).toBe("Zıtlık");
     expect(topicDef("cumle_tamamlama", "yok")).toBeUndefined();
