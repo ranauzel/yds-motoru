@@ -29,7 +29,7 @@ export function DayCalendar({ weeks }: { weeks: DayCell[][] }) {
   const [openDay, setOpenDay] = useState<string | null>(null);
 
   return (
-    <section className={`${TILE} col-span-2`} aria-labelledby="gun-takvimi">
+    <section className={`${TILE} col-span-2 lg:row-span-2`} aria-labelledby="gun-takvimi">
       <div className="flex items-center">
         <h2 id="gun-takvimi" className="font-bold">Gün takvimi</h2>
         <div className="ml-auto flex items-center gap-1 text-xs text-muted" aria-hidden="true">
