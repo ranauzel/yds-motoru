@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { isExampleDir, loadQuestions, resolveContentDir } from "./load";
-import { TOPICS } from "./schema";
+import { topicDef } from "./topics";
 
 const ROOT = path.resolve(__dirname, "..", "..", "..", "..", "content");
 // Repodaki örnek içerik her zaman; gerçek sorular (content/sorular) varsa onlar da doğrulanır.
@@ -20,7 +20,7 @@ describe.each(DIRS)("içerik: %s", (dir) => {
   });
 
   it("her sorunun listeden bir konu etiketi var", async () => {
-    for (const q of await loadQuestions(dir)) expect(TOPICS).toContain(q.topic);
+    for (const q of await loadQuestions(dir)) expect(topicDef(q.type, q.topic), `${q.id}: ${q.topic}`).toBeDefined();
   });
 });
 

@@ -1,5 +1,6 @@
 // Pano hesapları: ısı haritası penceresi, geri sayım, günün ipucu, bugünün ilerlemesi, zayıf konular. Saf fonksiyonlar, testli.
 import type { QuestionType } from "@/lib/content/schema";
+import { topicKey } from "@/lib/content/topics";
 import { addDays, weekdayIndex } from "@/features/session/day";
 
 export type DaySummary = { day: string; finished: boolean; correct: number; total: number; wordsKnown: number; wordsTotal: number };
@@ -73,7 +74,7 @@ export function weakTopics(
   for (const a of attempts) {
     const q = a.sessionId !== null ? byId.get(a.questionId) : undefined;
     if (!q) continue;
-    const key = `${q.type}:${q.topic}`;
+    const key = topicKey(q.type, q.topic);
     const s = stats.get(key) ?? { type: q.type, topic: q.topic, correct: 0, total: 0 };
     s.total++;
     if (a.correct) s.correct++;

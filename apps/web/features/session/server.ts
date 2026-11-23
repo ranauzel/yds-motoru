@@ -1,6 +1,7 @@
 // Oturum verisi için sunucu tarafı sorgular. Sadece sunucu bileşenleri ve server action'lar kullanır.
 import { and, eq, gte, isNotNull } from "drizzle-orm";
 import { getAllQuestions, getQuestionsByIds } from "@/lib/content/repo";
+import { topicKey } from "@/lib/content/topics";
 import { TRAP_NAMES } from "@/lib/content/schema";
 import { TRAP_GUIDE } from "@/lib/content/traps";
 import { db, schema } from "@/lib/db";
@@ -40,11 +41,11 @@ export async function planToday(userId: string, now: Date): Promise<{ questionId
   ]);
   const dueBefore = dayEnd(now);
   // Emekli sorular gelmez; yanlış yapılan konulardan yeni sorular öne alınır (spec §5).
-  const topicKey = new Map(questions.map((q) => [q.id, `${q.type}:${q.topic}`]));
+  const topicOf = new Map(questions.map((q) => [q.id, topicKey(q.type, q.topic)]));
   const questionIds = pickDailyQuestions({
     questionIds: questions.map((q) => q.id), reviews: questionReviews, dueBefore, size: DAILY_QUESTIONS, maxDue: MAX_DUE_QUESTIONS,
     retired: retiredQuestions(userAttempts),
-    boost: { topicKey, keys: wrongTopicKeys(userAttempts, topicKey) },
+    boost: { topicKey: topicOf, keys: wrongTopicKeys(userAttempts, topicOf) },
   });
   const reviewed = new Set(questionReviews.map((r) => r.itemId));
   return {

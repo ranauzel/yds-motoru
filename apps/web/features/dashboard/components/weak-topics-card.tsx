@@ -1,5 +1,6 @@
 import { TrendingDown } from "lucide-react";
-import { QUESTION_TYPE_NAMES, TOPIC_NAMES } from "@/lib/content/schema";
+import { QUESTION_TYPE_NAMES } from "@/lib/content/schema";
+import { topicDef, topicKey } from "@/lib/content/topics";
 import type { TopicStat } from "../stats";
 import { TILE, TILE_ICON } from "./tile";
 
@@ -14,10 +15,10 @@ export function WeakTopicsCard({ topics }: { topics: TopicStat[] }) {
       ) : (
         <ul className="mt-1 space-y-0.5 text-sm">
           {topics.map((t) => (
-            <li key={`${t.type}:${t.topic}`} className="flex justify-between gap-2">
+            <li key={topicKey(t.type, t.topic)} className="flex justify-between gap-2">
               <span className="min-w-0 truncate">
                 <span className="text-muted">{QUESTION_TYPE_NAMES[t.type]} · </span>
-                {TOPIC_NAMES[t.topic as keyof typeof TOPIC_NAMES] ?? t.topic}
+                {topicDef(t.type, t.topic)?.name ?? t.topic}
               </span>
               <b className="shrink-0">%{Math.round((100 * t.correct) / t.total)}</b>
             </li>

@@ -1,5 +1,6 @@
 // content/ klasöründeki JSON dosyalarının şeması. Bozuk içerik uygulamaya hiç girmez.
 import { z } from "zod";
+import { TOPIC_MAP, topicDef } from "./topics";
 
 export const TRAP_CODES = [
   "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12", "T13", "T14", "T15",
@@ -23,15 +24,6 @@ export const QUESTION_TYPE_NAMES: Record<QuestionType, string> = {
   kelime: "Kelime", dilbilgisi: "Dilbilgisi", cloze: "Cloze test", cumle_tamamlama: "Cümle tamamlama", ceviri: "Çeviri",
   okuma: "Okuma", diyalog: "Diyalog", yakin_anlam: "Yakın anlamlı cümle", paragraf_tamamlama: "Paragraf tamamlama",
   anlami_bozan: "Anlamı bozan cümle",
-};
-
-/** Sorunun ana konusu (çoğunlukla bağlacın işlevi). Konuya göre çalışma ve istatistik için sabit liste. */
-export const TOPICS = [
-  "kosul", "zitlik", "neden_sonuc", "ek", "zaman", "amac", "karsilastirma", "iliskili_yapi",
-] as const;
-export const TOPIC_NAMES: Record<(typeof TOPICS)[number], string> = {
-  kosul: "Koşul", zitlik: "Zıtlık", neden_sonuc: "Neden-sonuç", ek: "Ekleme", zaman: "Zaman",
-  amac: "Amaç", karsilastirma: "Karşılaştırma", iliskili_yapi: "İlişkili yapı / gönderge",
 };
 
 export const OptionKey = z.enum(["A", "B", "C", "D", "E"]);
@@ -65,7 +57,7 @@ export const QuestionBase = z.object({
   id: z.string().min(1),
   number: z.number().int().min(1).max(80),
   type: z.enum(QUESTION_TYPES),
-  topic: z.enum(TOPICS),
+  topic: z.string().min(1), // tipe göre konu listesi: lib/content/topics.ts (aşağıda doğrulanır)
   sub_topic: z.string(),
   difficulty: z.number().int().min(1).max(3),
   stem: z.string().min(1),
@@ -82,6 +74,10 @@ export const QuestionBase = z.object({
 });
 
 export const Question = QuestionBase.superRefine((q, ctx) => {
+  if (!TOPIC_MAP[q.type].length)
+    ctx.addIssue({ code: "custom", path: ["type"], message: `${q.type}: bu tipin konu haritası henüz yok (lib/content/topics.ts)` });
+  else if (!topicDef(q.type, q.topic))
+    ctx.addIssue({ code: "custom", path: ["topic"], message: `${q.topic}: ${q.type} konularından biri değil (${TOPIC_MAP[q.type].map((t) => t.code).join(", ")})` });
   const keys = q.options.map((o) => o.key).join("");
   if (keys !== "ABCDE") ctx.addIssue({ code: "custom", message: `şıklar A–E sırasında değil: ${keys}` });
   for (const o of q.options) {
