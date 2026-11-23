@@ -10,7 +10,7 @@ const q = (n: number, vocab: Question["vocab"] = []) => ({
 
 const snap = (over: Partial<Snapshot> = {}): Snapshot => ({
   sessionId: "s", questions: Array.from({ length: 8 }, (_, i) => q(i + 1, i === 0 ? [{ word: "w", tr: "w-tr", warmup: true }, { word: "x", tr: "x-tr" }, { word: "y", tr: "y-tr" }, { word: "z", tr: "z-tr" }] : [])),
-  position: 0, breakSeen: false, warmDone: [0], warmAnswers: {}, answers: {}, knownWords: [], ...over,
+  position: 0, breakSeen: false, warmDone: [0], warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, ...over,
 });
 const K = (key: string, mods: Partial<{ shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean; inSummary: boolean }> = {}) =>
   ({ key, shiftKey: false, ctrlKey: false, altKey: false, metaKey: false, inSummary: false, ...mods });

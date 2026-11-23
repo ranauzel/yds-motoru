@@ -3,7 +3,9 @@
 import type { Question, TrapCode } from "@/lib/content/schema";
 
 export const BREAK_AFTER = 4;   // blok boyutu: mola + kelime ısınması her 4 soruda bir
-export const WARM_MAX = 30;     // bir ısınmada en fazla kaç kelime
+export const WARM_MAX = 8;      // bir blok ısınmasında en fazla kaç yeni kelime (oturum ~25 dk'yı aşmasın)
+/** Oturum başındaki kelime tekrarı bölümünün blok numarası (warmItems/warmDone içinde). */
+export const REVIEW_BLOCK = -1;
 
 export type OptionKey = "A" | "B" | "C" | "D" | "E";
 export type Tool = "gloss" | "words" | "hint";
@@ -19,6 +21,9 @@ export type Snapshot = {
   warmAnswers: Record<string, boolean>;
   answers: Record<string, AnswerRecord>;       // anahtar: question id
   knownWords: string[];                        // oturum açılışında "bilinen" kelimeler
+  reviewVocab: Question["vocab"];              // bugünün tekrar kelimeleri (sırasıyla, anlamlarıyla)
+  weekDays: number;                            // bu hafta oturumu bitirilmiş gün sayısı (affedici seri)
+  newLeft: number;                             // havuzda kalan yeni soru sayısı
 };
 
 export type WarmItem = { word: string; tr: string; context?: string; choices: string[] };
@@ -70,10 +75,13 @@ const freshUi = (): Ui => ({
   used: { gloss: false, words: false, hint: false }, warmPick: null,
 });
 
-/** Bloğun ısınma kelimeleri: tekil, `warmup: true`; bilinenler hariç (bu oturumda cevaplananlar kalır). */
-export function warmVocab(s: Pick<Snapshot, "questions" | "knownWords" | "warmAnswers">, block: number): Question["vocab"] {
+/**
+ * Bloğun ısınma kelimeleri: tekil, `warmup: true`; bilinenler hariç (bu oturumda cevaplananlar kalır).
+ * Bugünün tekrar kelimeleri hiç alınmaz: onlar oturum başındaki kelime tekrarında zaten soruluyor.
+ */
+export function warmVocab(s: Pick<Snapshot, "questions" | "knownWords" | "warmAnswers" | "reviewVocab">, block: number): Question["vocab"] {
   const known = new Set(s.knownWords);
-  const seen = new Set<string>();
+  const seen = new Set<string>(s.reviewVocab.map((v) => v.word));
   const out: Question["vocab"] = [];
   for (const q of s.questions.slice(block, block + BREAK_AFTER))
     for (const v of q.vocab) {
@@ -96,27 +104,35 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 
 /** Her blok başı için ısınma öğeleri; şıklar doğru anlam + diğer kelimelerin anlamlarından 3 tane. */
 export function buildWarmItems(s: Snapshot, rng: () => number): Record<number, WarmItem[]> {
-  const allTr = [...new Set(s.questions.flatMap((q) => q.vocab.map((v) => v.tr)))];
+  const allTr = [...new Set([...s.questions.flatMap((q) => q.vocab.map((v) => v.tr)), ...s.reviewVocab.map((v) => v.tr)])];
+  const toItem = (v: Question["vocab"][number]): WarmItem => ({
+    word: v.word, tr: v.tr, context: v.context,
+    choices: shuffle([v.tr, ...shuffle(allTr.filter((t) => t !== v.tr), rng).slice(0, 3)], rng),
+  });
   const out: Record<number, WarmItem[]> = {};
+  if (s.reviewVocab.length) out[REVIEW_BLOCK] = s.reviewVocab.map(toItem);
   for (let block = 0; block < s.questions.length; block += BREAK_AFTER)
-    out[block] = warmVocab(s, block).map((v) => ({
-      word: v.word, tr: v.tr, context: v.context,
-      choices: shuffle([v.tr, ...shuffle(allTr.filter((t) => t !== v.tr), rng).slice(0, 3)], rng),
-    }));
+    out[block] = warmVocab(s, block).map(toItem);
   return out;
+}
+
+/** Bir ısınma bloğunun ekranı: ilk cevaplanmamış kelime, hepsi cevaplandıysa bitiş ekranı. */
+function warmScreen(items: WarmItem[], warmAnswers: Record<string, boolean>, block: number): Screen {
+  const idx = items.findIndex((it) => !(it.word in warmAnswers));
+  return idx === -1 ? { kind: "warmupDone", block } : { kind: "warmup", block, idx };
 }
 
 /** Verilen pozisyonda hangi ekranın açılacağı (mola kontrolü dahil). */
 function screenAt(s: Pick<State, "questions" | "position" | "breakSeen" | "warmDone" | "warmAnswers" | "warmItems">): Screen {
   const n = s.questions.length;
+  // Oturum başındaki kelime tekrarı, bitene kadar her şeyden önce gelir (soru olmasa bile).
+  const review = s.warmItems[REVIEW_BLOCK] ?? [];
+  if (review.length && !s.warmDone.includes(REVIEW_BLOCK)) return warmScreen(review, s.warmAnswers, REVIEW_BLOCK);
   if (s.position >= n) return { kind: "summary" };
   if (s.position === BREAK_AFTER && !s.breakSeen) return { kind: "break" };
   if (s.position % BREAK_AFTER === 0 && !s.warmDone.includes(s.position)) {
     const items = s.warmItems[s.position] ?? [];
-    if (items.length) {
-      const idx = items.findIndex((it) => !(it.word in s.warmAnswers));
-      return idx === -1 ? { kind: "warmupDone", block: s.position } : { kind: "warmup", block: s.position, idx };
-    }
+    if (items.length) return warmScreen(items, s.warmAnswers, s.position);
   }
   return { kind: "question" };
 }
@@ -189,10 +205,9 @@ export function reduce(s: State, a: Action): State {
     case "warmEnd": {
       if (scr.kind !== "warmup" && scr.kind !== "warmupDone") return s;
       const warmDone = s.warmDone.includes(scr.block) ? s.warmDone : [...s.warmDone, scr.block];
-      return {
-        ...s, warmDone, screen: { kind: "question" }, ui: freshUi(),
-        questionStartedAt: a.now ?? s.questionStartedAt,
-      };
+      // Sıradaki ekran durumdan hesaplanır: tekrardan sonra blok 0 ısınması, soru ya da (soru yoksa) özet.
+      const ended = { ...s, warmDone, ui: freshUi(), questionStartedAt: a.now ?? s.questionStartedAt };
+      return { ...ended, screen: screenAt(ended) };
     }
     case "startReview": {
       if (scr.kind !== "summary" || !s.questions.length) return s;
@@ -247,7 +262,7 @@ export function isSnapshotAhead(snap: Snapshot, s: State): boolean {
     || Object.keys(snap.warmAnswers).some((k) => !(k in s.warmAnswers));
 }
 
-export function summarize(s: Pick<State, "questions" | "answers">) {
+export function summarize(s: Pick<State, "questions" | "answers" | "reviewVocab" | "warmAnswers">) {
   const done = s.questions.filter((q) => s.answers[q.id]);
   const wrong = done.filter((q) => s.answers[q.id].choice !== q.answer);
   const count = new Map<TrapCode, number>();
@@ -262,5 +277,7 @@ export function summarize(s: Pick<State, "questions" | "answers">) {
     wrongRules: wrong.map((q) => ({ number: q.number, rule: q.golden_rule })),
     sureWrong: wrong.filter((q) => s.answers[q.id].sure).length,
     glossCount: done.filter((q) => s.answers[q.id].glossUsed).length,
+    reviewTotal: s.reviewVocab.length,
+    reviewKnown: s.reviewVocab.filter((v) => s.warmAnswers[v.word] === true).length,
   };
 }

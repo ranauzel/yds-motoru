@@ -57,6 +57,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
       warmAnswers: row.warmAnswers,
       answers,
       knownWords: known.map((k) => k.itemId),
+      reviewVocab: [], weekDays: 0, newLeft: 0, // geçici: Task 3 dolduracak
     },
   };
 }

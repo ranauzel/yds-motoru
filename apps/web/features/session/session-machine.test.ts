@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "@/lib/content/schema";
 import {
-  effectsFor, initState, isSnapshotAhead, reduce, summarize, warmVocab,
+  effectsFor, initState, isSnapshotAhead, reduce, REVIEW_BLOCK, summarize, warmVocab,
   type Action, type Snapshot, type State,
 } from "./session-machine";
 
@@ -38,7 +38,7 @@ function questions(): Question[] {
 function snap(over: Partial<Snapshot> = {}): Snapshot {
   return {
     sessionId: "s1", questions: questions(), position: 0, breakSeen: false, warmDone: [],
-    warmAnswers: {}, answers: {}, knownWords: [], ...over,
+    warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, ...over,
   };
 }
 
@@ -229,7 +229,7 @@ describe("summarize", () => {
   it("counts traps of chosen wrong options, most frequent first, and sureWrong", () => {
     const a = (choice: "A" | "B" | "C", sure: boolean, glossUsed = false) => ({ choice, sure, glossUsed, hintUsed: false, wordsUsed: false });
     const r = summarize({
-      questions: questions(),
+      questions: questions(), reviewVocab: [], warmAnswers: {},
       answers: { q1: a("A", true, true), q2: a("B", false), q3: a("C", true), q4: a("A", false) },
     });
     expect(r.right).toBe(1);
@@ -265,5 +265,53 @@ describe("isSnapshotAhead", () => {
     const s0 = snap({ position: 1, warmDone: [0] });
     const local = run(initState(s0, rng, T0), { type: "select", key: "C" }, { type: "submit", sure: true, now: 2 }, { type: "next", now: 3 }).state;
     expect(isSnapshotAhead(s0, local)).toBe(false);
+  });
+});
+
+describe("kelime tekrarı (REVIEW_BLOCK = -1)", () => {
+  // w1 blok 0 ısınmasında da var: tekrar kelimesi olduğu için orada yeniden sorulmamalı.
+  const RV: Vocab[] = [{ word: "w1", tr: "w1-tr" }, { word: "rw2", tr: "rw2-tr" }];
+
+  it("tekrar kelimeleri varsa ilk ekran kelime tekrarı", () => {
+    expect(initState(snap({ reviewVocab: RV }), rng, T0).screen).toEqual({ kind: "warmup", block: REVIEW_BLOCK, idx: 0 });
+  });
+
+  it("tekrar bitince blok 0 ısınmasına geçer ve markWarmDone(-1) üretir", () => {
+    const { state, effects } = run(initState(snap({ reviewVocab: RV }), rng, T0), { type: "warmSkip", now: 5 });
+    expect(state.screen).toEqual({ kind: "warmup", block: 0, idx: 0 });
+    expect(effects).toEqual([{ kind: "markWarmDone", block: REVIEW_BLOCK }]);
+  });
+
+  it("yeniden açılışta (warmDone: [-1]) tekrar gösterilmez", () => {
+    expect(initState(snap({ reviewVocab: RV, warmDone: [REVIEW_BLOCK] }), rng, T0).screen).toEqual({ kind: "warmup", block: 0, idx: 0 });
+  });
+
+  it("tekrar kelimesi blok ısınmasında yeniden sorulmaz", () => {
+    expect(warmVocab(snap({ reviewVocab: RV }), 0).map((v) => v.word)).toEqual(["w2"]);
+  });
+
+  it("tekrar öğeleri doğru anlam + 3 şıktan oluşur", () => {
+    const items = initState(snap({ reviewVocab: RV }), rng, T0).warmItems[REVIEW_BLOCK];
+    expect(items.map((it) => it.word)).toEqual(["w1", "rw2"]);
+    for (const it of items) {
+      expect(it.choices).toHaveLength(4);
+      expect(it.choices).toContain(it.tr);
+    }
+  });
+
+  it("soru yoksa: önce kelime tekrarı, bitince özet", () => {
+    const s0 = initState(snap({ questions: [], reviewVocab: RV }), rng, T0);
+    expect(s0.screen.kind).toBe("warmup");
+    const { state, effects } = run(s0, { type: "warmSkip", now: 1 });
+    expect(state.screen).toEqual({ kind: "summary" });
+    expect(effects).toEqual([{ kind: "markWarmDone", block: REVIEW_BLOCK }]);
+  });
+
+  it("tekrar kelimesi yoksa davranış eskisi gibi (blok 0 ısınması)", () => {
+    expect(initState(snap(), rng, T0).screen).toEqual({ kind: "warmup", block: 0, idx: 0 });
+  });
+
+  it("summarize tekrar sayısını ve bilinenleri verir", () => {
+    expect(summarize({ ...snap({ reviewVocab: RV }), warmAnswers: { w1: true, rw2: false } })).toMatchObject({ reviewTotal: 2, reviewKnown: 1 });
   });
 });
