@@ -6,10 +6,11 @@ import { TRAP_GUIDE } from "@/lib/content/traps";
 import { db, schema } from "@/lib/db";
 import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
 import { tipOfDay } from "@/features/dashboard/stats";
+import { attemptRows, reviewRows } from "@/features/progress/server";
 import { trapStats } from "@/features/traps/stats";
 import { dayEnd, todayKey, weekDaysDone } from "./day";
 import {
-  canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord, type ReviewRow,
+  canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord,
 } from "./rules";
 import type { AnswerRecord, OptionKey, Snapshot } from "./session-machine";
 
@@ -29,11 +30,6 @@ export async function getTodaySession(userId: string, day: string): Promise<Prac
   const [row] = await db.select().from(practiceSessions)
     .where(and(eq(practiceSessions.userId, userId), eq(practiceSessions.day, day))).limit(1);
   return row ?? null;
-}
-
-async function reviewRows(userId: string, kind: "word" | "question"): Promise<ReviewRow[]> {
-  return db.select({ itemId: reviewItems.itemId, dueAt: reviewItems.dueAt, priority: reviewItems.priority, reps: reviewItems.reps })
-    .from(reviewItems).where(and(eq(reviewItems.userId, userId), eq(reviewItems.kind, kind)));
 }
 
 /** Bugünün içeriği: zamanı gelen + yeni sorular ve zamanı gelen kelimeler (spec §5.3–5.4). Satır oluşturmaz. */
@@ -80,8 +76,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
     reviewRows(userId, "question"),
     finishedDays(userId),
     // Tuzak uyarısı ve günün ipucu için kullanıcının bütün cevapları (pano ile aynı kaynak).
-    db.select({ questionId: attempts.questionId, choice: attempts.choice, correct: attempts.correct, createdAt: attempts.createdAt })
-      .from(attempts).where(eq(attempts.userId, userId)),
+    attemptRows(userId),
   ]);
 
   const answers: Record<string, AnswerRecord> = {};
