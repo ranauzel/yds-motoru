@@ -208,7 +208,7 @@ FocusShell
 | Grafikler | Recharts | Basit, yeterli |
 | Animasyon | motion ve canvas-confetti | `prefers-reduced-motion`'a saygı |
 | Mobil | PWA (manifest + ana ekrana ekle) | Uygulama mağazası gerekmez, telefonda uygulama gibi açılır |
-| Tema | Açık/koyu, sistem varsayılanı | Gece çalışması için |
+| Tema | Yalnızca açık tema (Odak Panosu paleti, bkz. `apps/web/lib/ui/palette.ts`) | Tek palet, kontrast testle doğrulanır |
 
 ---
 
