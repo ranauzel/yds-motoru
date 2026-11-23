@@ -18,6 +18,12 @@ export const QUESTION_TYPES = [
   "kelime", "dilbilgisi", "cloze", "cumle_tamamlama", "ceviri", "okuma",
   "diyalog", "yakin_anlam", "paragraf_tamamlama", "anlami_bozan",
 ] as const;
+export type QuestionType = (typeof QUESTION_TYPES)[number];
+export const QUESTION_TYPE_NAMES: Record<QuestionType, string> = {
+  kelime: "Kelime", dilbilgisi: "Dilbilgisi", cloze: "Cloze test", cumle_tamamlama: "Cümle tamamlama", ceviri: "Çeviri",
+  okuma: "Okuma", diyalog: "Diyalog", yakin_anlam: "Yakın anlamlı cümle", paragraf_tamamlama: "Paragraf tamamlama",
+  anlami_bozan: "Anlamı bozan cümle",
+};
 
 /** Sorunun ana konusu (çoğunlukla bağlacın işlevi). Konuya göre çalışma ve istatistik için sabit liste. */
 export const TOPICS = [

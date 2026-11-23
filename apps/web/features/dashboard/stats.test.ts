@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calendarWindow, dayLevel, daysUntil, tipOfDay, todayProgress, type DaySummary } from "./stats";
+import { calendarWindow, dayLevel, daysUntil, tipOfDay, todayProgress, weakTopics, type DaySummary } from "./stats";
 
 const S = (o: Partial<DaySummary> & { day: string }): DaySummary => ({ finished: true, correct: 0, total: 0, wordsKnown: 0, wordsTotal: 0, ...o });
 
@@ -43,5 +43,31 @@ describe("pano hesapları", () => {
     expect(todayProgress(null)).toBe(0);
     expect(todayProgress({ questionIds: ["a", "b"], position: 1, reviewWords: ["w1", "w2"], warmAnswers: { w1: true }, finishedAt: null })).toBe(0.5);
     expect(todayProgress({ questionIds: [], position: 0, reviewWords: ["w"], warmAnswers: {}, finishedAt: new Date() })).toBe(1);
+  });
+});
+
+describe("weakTopics", () => {
+  const ct = (topic: string) => ({ type: "cumle_tamamlama" as const, topic });
+  const byId = new Map([
+    ["z1", ct("zitlik")], ["z2", ct("zitlik")], ["k1", ct("kosul")], ["t1", ct("zaman")], ["n1", ct("neden_sonuc")], ["a1", ct("amac")],
+  ]);
+  const a = (questionId: string, correct: boolean, sessionId: string | null = "s") => ({ sessionId, questionId, correct });
+  const many = (id: string, right: number, wrong: number) => [...Array(right)].map(() => a(id, true)).concat([...Array(wrong)].map(() => a(id, false)));
+
+  it("en az 3 cevabı olan konular, en zayıftan başlayarak", () => {
+    const at = [...many("z1", 1, 2), a("z2", false), ...many("k1", 2, 1), ...many("t1", 1, 1)];
+    expect(weakTopics(at, byId).map((t) => [t.topic, t.correct, t.total])).toEqual([["zitlik", 1, 4], ["kosul", 2, 3]]);
+  });
+  it("eşit oranda çok cevaplı önce", () => {
+    const at = [...many("k1", 1, 2), ...many("z1", 2, 4)];
+    expect(weakTopics(at, byId).map((t) => t.topic)).toEqual(["zitlik", "kosul"]);
+  });
+  it("serbest çalışma (sessionId null) ve görünmeyen soru sayılmaz", () => {
+    const at = [...many("k1", 0, 2), a("k1", false, null), a("gizli", false), a("gizli", false), a("gizli", false)];
+    expect(weakTopics(at, byId)).toEqual([]);
+  });
+  it("en fazla 3 konu", () => {
+    const at = [...many("z1", 0, 3), ...many("k1", 1, 2), ...many("t1", 2, 1), ...many("n1", 3, 0)];
+    expect(weakTopics(at, byId)).toHaveLength(3);
   });
 });

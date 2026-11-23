@@ -1,4 +1,5 @@
-// Pano hesapları: ısı haritası penceresi, geri sayım, günün ipucu, bugünün ilerlemesi. Saf fonksiyonlar, testli.
+// Pano hesapları: ısı haritası penceresi, geri sayım, günün ipucu, bugünün ilerlemesi, zayıf konular. Saf fonksiyonlar, testli.
+import type { QuestionType } from "@/lib/content/schema";
 import { addDays, weekdayIndex } from "@/features/session/day";
 
 export type DaySummary = { day: string; finished: boolean; correct: number; total: number; wordsKnown: number; wordsTotal: number };
@@ -54,4 +55,32 @@ export function todayProgress(
   if (total === 0) return 0;
   const answered = row.reviewWords.filter((w) => w in row.warmAnswers).length;
   return (row.position + answered) / total;
+}
+
+export type TopicStat = { type: QuestionType; topic: string; correct: number; total: number };
+
+/**
+ * Zayıf konular (spec §4.4): yalnızca günlük oturum cevapları ve görünür sorular; en az `min` cevaplı konular,
+ * doğru oranı artan (eşitlikte çok cevaplı önce), en fazla `limit` tane.
+ */
+export function weakTopics(
+  attempts: { sessionId: string | null; questionId: string; correct: boolean }[],
+  byId: Map<string, { type: QuestionType; topic: string }>,
+  min = 3,
+  limit = 3,
+): TopicStat[] {
+  const stats = new Map<string, TopicStat>();
+  for (const a of attempts) {
+    const q = a.sessionId !== null ? byId.get(a.questionId) : undefined;
+    if (!q) continue;
+    const key = `${q.type}:${q.topic}`;
+    const s = stats.get(key) ?? { type: q.type, topic: q.topic, correct: 0, total: 0 };
+    s.total++;
+    if (a.correct) s.correct++;
+    stats.set(key, s);
+  }
+  return [...stats.values()]
+    .filter((s) => s.total >= min)
+    .sort((x, y) => x.correct / x.total - y.correct / y.total || y.total - x.total)
+    .slice(0, limit);
 }

@@ -9,7 +9,7 @@ import { vocabByWord } from "@/features/session/rules";
 import { finishedDays, getTodaySession, planToday, type PracticeSessionRow } from "@/features/session/server";
 import { trapStats, type TrapStat } from "@/features/traps/stats";
 import { classifyWords } from "@/features/words/stats";
-import { calendarWindow, daysUntil, tipOfDay, todayProgress, type DayCell, type DaySummary } from "./stats";
+import { calendarWindow, daysUntil, tipOfDay, todayProgress, weakTopics, type DayCell, type DaySummary, type TopicStat } from "./stats";
 
 const { practiceSessions, user } = schema;
 
@@ -24,6 +24,8 @@ export type DashboardData = {
   daysLeft: number | null;
   words: { learned: number; reviewing: number };
   topTrap: TrapStat | null;
+  /** En zayıf 3 konu (en az 3 günlük cevaplı). */
+  weakTopics: TopicStat[];
   tip: string | null;
   /** Kullanıcıya görünen soru yok ("pnpm content:import" mesajı). */
   noQuestions: boolean;
@@ -80,6 +82,7 @@ export async function dashboardData(userId: string, now: Date): Promise<Dashboar
       reviewing: words.filter((w) => w.status === "reviewing").length,
     },
     topTrap: trapStats(userAttempts, byId)[0] ?? null,
+    weakTopics: weakTopics(userAttempts, byId),
     tip: tipOfDay({
       wrongRules: [...new Set(questions.filter((q) => wrongIds.has(q.id)).map((q) => q.golden_rule))],
       allRules: [...new Set(questions.map((q) => q.golden_rule))],

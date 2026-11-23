@@ -5,6 +5,7 @@ import { ExamCountdownCard } from "@/features/dashboard/components/exam-countdow
 import { TipCard } from "@/features/dashboard/components/tip-card";
 import { TodayTaskCard } from "@/features/dashboard/components/today-task-card";
 import { TrapsCard } from "@/features/dashboard/components/traps-card";
+import { WeakTopicsCard } from "@/features/dashboard/components/weak-topics-card";
 import { WeekGoalCard } from "@/features/dashboard/components/week-goal-card";
 import { WordsCard } from "@/features/dashboard/components/words-card";
 import { TILE } from "@/features/dashboard/components/tile";
@@ -59,6 +60,7 @@ async function Dashboard() {
       <WeekGoalCard weekDays={d.weekDays} />
       <WordsCard learned={d.words.learned} reviewing={d.words.reviewing} />
       <TrapsCard topTrap={d.topTrap} />
+      <WeakTopicsCard topics={d.weakTopics} />
       <DayCalendar weeks={d.calendar} />
       {d.tip && <TipCard tip={d.tip} />}
     </div>
