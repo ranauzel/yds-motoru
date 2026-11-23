@@ -1,0 +1,31 @@
+import { describe, expect, it } from "vitest";
+import type { ReviewRow } from "@/features/session/rules";
+import { classifyWords, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
+
+const dueBefore = new Date("2026-11-23T21:00:00Z");
+const r = (itemId: string, dueAt: string, reps = 1, priority = false): ReviewRow => ({ itemId, dueAt: new Date(dueAt), reps, priority });
+const W = (word: string, status: WordStatus, dueAt: string | null): WordRow => ({ word, tr: word, status, dueAt: dueAt ? new Date(dueAt) : null });
+
+describe("classifyWords", () => {
+  it("sınıflandırma: reps>=2 öğrenildi, kayıtlı<2 tekrarda, kayıtsız yeni; görünmeyen kayıt yok sayılır", () => {
+    const vocab = new Map([["a", { word: "a", tr: "A" }], ["b", { word: "b", tr: "B" }], ["c", { word: "c", tr: "C" }]]);
+    const rows = classifyWords(vocab, [r("a", "2026-12-01T00:00:00Z", 2), r("b", "2026-11-24T00:00:00Z", 1), r("gizli", "2026-11-20T00:00:00Z", 0)]);
+    expect(rows.map((w) => [w.word, w.status])).toEqual([["a", "learned"], ["b", "reviewing"], ["c", "new"]]);
+  });
+});
+
+describe("pickWordPractice", () => {
+  it("serbest çalışma bugün zamanı gelenleri ve bugünün oturumundakileri almaz", () => {
+    const words = [W("x", "reviewing", "2026-11-23T10:00:00Z"), W("y", "reviewing", "2026-11-26T00:00:00Z"), W("z", "reviewing", "2026-11-25T00:00:00Z"), W("o", "reviewing", "2026-11-27T00:00:00Z")];
+    expect(pickWordPractice({ words, status: "reviewing", excluded: new Set(["o"]), dueBefore, size: 10 })).toEqual(["z", "y"]);
+  });
+});
+
+describe("shouldRecordWordPractice", () => {
+  it("yazma kuralı: yeni her zaman, bugün zamanı gelen asla, zamanı gelmemişte yalnızca yanlış", () => {
+    expect(shouldRecordWordPractice({ review: null, correct: true, dueBefore })).toBe(true);
+    expect(shouldRecordWordPractice({ review: r("w", "2026-11-23T10:00:00Z"), correct: false, dueBefore })).toBe(false);
+    expect(shouldRecordWordPractice({ review: r("w", "2026-11-30T00:00:00Z"), correct: true, dueBefore })).toBe(false);
+    expect(shouldRecordWordPractice({ review: r("w", "2026-11-30T00:00:00Z"), correct: false, dueBefore })).toBe(true);
+  });
+});
