@@ -25,6 +25,8 @@ export type Snapshot = {
   weekDays: number;                            // bu hafta oturumu bitirilmiş gün sayısı (affedici seri)
   newLeft: number;                             // havuzda kalan yeni soru sayısı
   meaningPool: string[];                       // görünür bütün kelime anlamları (az kelimeli tekrarda da 3 yanlış şık için)
+  topTrap: { code: TrapCode; name: string; catch: string } | null; // en sık düşülen tuzak (oturum açılışında)
+  tip: string | null;                          // "Biliyor muydun?" (günün ipucu, molada)
 };
 
 export type WarmItem = { word: string; tr: string; context?: string; choices: string[] };
@@ -249,6 +251,21 @@ export function effectsFor(prev: State, a: Action, next: State): Effect[] {
     default:
       return [];
   }
+}
+
+/** Eylem bir cevabı sonuçlandırdıysa doğru mu yanlış mı (kutlama/ses için); diğer eylemlerde null. */
+export function feedbackFor(prev: State, a: Action, next: State): "correct" | "wrong" | null {
+  if (prev === next) return null;
+  if (a.type === "submit") {
+    const q = prev.questions[prev.position];
+    const ans = q && next.answers[q.id];
+    return ans ? (ans.choice === q.answer ? "correct" : "wrong") : null;
+  }
+  if (a.type === "warmPick") {
+    const word = Object.keys(next.warmAnswers).find((k) => !(k in prev.warmAnswers));
+    return word === undefined ? null : next.warmAnswers[word] ? "correct" : "wrong";
+  }
+  return null;
 }
 
 /**

@@ -1,8 +1,12 @@
 // Oturum verisi için sunucu tarafı sorgular. Sadece sunucu bileşenleri ve server action'lar kullanır.
 import { and, eq, gte, isNotNull } from "drizzle-orm";
 import { getAllQuestions, getQuestionsByIds } from "@/lib/content/repo";
+import { TRAP_NAMES } from "@/lib/content/schema";
+import { TRAP_GUIDE } from "@/lib/content/traps";
 import { db, schema } from "@/lib/db";
 import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
+import { tipOfDay } from "@/features/dashboard/stats";
+import { trapStats } from "@/features/traps/stats";
 import { dayEnd, todayKey, weekDaysDone } from "./day";
 import {
   canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord, type ReviewRow,
@@ -68,13 +72,16 @@ export async function loadSnapshot(userId: string, id: string): Promise<
   const questions = row.questionIds.map((qid) => byId.get(qid));
   if (questions.some((q) => !q)) return { ok: false, reason: "content_changed", recreatable: canRecreate(row, todayKey(new Date())) };
 
-  const [rows, known, allQuestions, reviewedQuestions, doneDays] = await Promise.all([
+  const [rows, known, allQuestions, reviewedQuestions, doneDays, userAttempts] = await Promise.all([
     db.select().from(attempts).where(and(eq(attempts.sessionId, id), eq(attempts.userId, userId))),
     db.select({ itemId: reviewItems.itemId }).from(reviewItems)
       .where(and(eq(reviewItems.userId, userId), eq(reviewItems.kind, "word"), gte(reviewItems.reps, 2))), // sm2.isKnown
     getAllQuestions(userId),
     reviewRows(userId, "question"),
     finishedDays(userId),
+    // Tuzak uyarısı ve günün ipucu için kullanıcının bütün cevapları (pano ile aynı kaynak).
+    db.select({ questionId: attempts.questionId, choice: attempts.choice, correct: attempts.correct, createdAt: attempts.createdAt })
+      .from(attempts).where(eq(attempts.userId, userId)),
   ]);
 
   const answers: Record<string, AnswerRecord> = {};
@@ -86,6 +93,8 @@ export async function loadSnapshot(userId: string, id: string): Promise<
 
   const vocab = vocabByWord(allQuestions);
   const reviewed = new Set(reviewedQuestions.map((r) => r.itemId));
+  const top = trapStats(userAttempts, new Map(allQuestions.map((q) => [q.id, q])))[0];
+  const wrongIds = new Set(userAttempts.filter((a) => !a.correct).map((a) => a.questionId));
   return {
     ok: true,
     snapshot: {
@@ -102,6 +111,12 @@ export async function loadSnapshot(userId: string, id: string): Promise<
       weekDays: weekDaysDone(row.day ? [...doneDays, row.day] : doneDays, todayKey(new Date())),
       newLeft: allQuestions.filter((q) => !reviewed.has(q.id)).length,
       meaningPool: [...new Set([...vocab.values()].map((v) => v.tr))],
+      topTrap: top ? { code: top.code, name: TRAP_NAMES[top.code], catch: TRAP_GUIDE[top.code].catch } : null,
+      tip: tipOfDay({
+        wrongRules: [...new Set(allQuestions.filter((q) => wrongIds.has(q.id)).map((q) => q.golden_rule))],
+        allRules: [...new Set(allQuestions.map((q) => q.golden_rule))],
+        today: todayKey(new Date()),
+      }),
     },
   };
 }

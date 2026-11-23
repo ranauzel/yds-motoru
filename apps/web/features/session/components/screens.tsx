@@ -1,9 +1,14 @@
 // Kelime tekrarı / ısınma, mola ve günün özeti ekranları.
+import { Coffee, Languages } from "lucide-react";
+import { TipCard } from "@/features/dashboard/components/tip-card";
+import { TRAP_NAMES } from "@/lib/content/schema";
 import { REVIEW_BLOCK, summarize, type Action, type State } from "../session-machine";
 import { CountUp } from "./count-up";
 import { CheckMark, WeekRing } from "./progress";
-import { BottomBar, Button, Center, ProgressBar, TrapChip } from "./ui";
-import { TRAP_NAMES } from "@/lib/content/schema";
+import { BottomBar, Button, CARD, Center, ProgressBar, TrapChip } from "./ui";
+
+/** Ekran simgesi (lucide; kartlarda emoji yok, spec §5.2). */
+const SCREEN_ICON = "mx-auto grid size-16 place-items-center rounded-full bg-accent-soft text-accent";
 
 export function Warmup({ s, act }: { s: State; act: (a: Action) => void }) {
   if (s.screen.kind !== "warmup") return null;
@@ -18,7 +23,7 @@ export function Warmup({ s, act }: { s: State; act: (a: Action) => void }) {
     <>
       <div className="mb-2 flex items-center gap-3 text-sm text-muted">
         <span>{review ? "Kelime tekrarı" : "Kelime ısınması"} {idx + 1} / {items.length}</span>
-        <ProgressBar value={idx / items.length} />
+        <ProgressBar value={idx / items.length} label={`${review ? "Kelime tekrarı" : "Kelime ısınması"} ilerlemesi`} />
       </div>
       {/* key: her kelimede kart yeniden kayarak gelir */}
       <div key={`${block}-${idx}`} className="anim-slide">
@@ -36,7 +41,7 @@ export function Warmup({ s, act }: { s: State; act: (a: Action) => void }) {
             if (answered) look = isRight ? "anim-ok border-ok bg-ok-soft" : k === s.ui.warmPick ? "border-warn bg-warn-soft" : "border-border bg-surface opacity-60";
             return (
               <button key={k} type="button" disabled={answered} onClick={() => act({ type: "warmPick", choiceIndex: k })}
-                className={`anim-press flex min-h-12 items-center gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left ${look}`}>
+                className={`anim-press flex min-h-12 items-center gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left transition-colors duration-200 ${look}`}>
                 <span className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-sm font-bold">{"ABCD"[k]}</span>
                 <span>{c}</span>
                 {answered && isRight && <span className="ml-auto font-bold text-ok" aria-label="doğru anlam">✓</span>}
@@ -64,7 +69,7 @@ export function WarmupDone({ s, act }: { s: State; act: (a: Action) => void }) {
   return (
     <>
       <Center>
-        {review ? <CheckMark /> : <div className="text-4xl">🔤</div>}
+        {review ? <CheckMark /> : <div className={SCREEN_ICON}><Languages className="size-8" aria-hidden="true" /></div>}
         <h2 className="mt-3 text-xl font-bold">{review ? "Tekrar bitti" : "Isınma bitti"}</h2>
         <p className="mt-2"><b>{score} / {items.length}</b> kelimeyi {review ? "hatırladın" : "bildin"}.</p>
         <p className="anim-fade-2 mt-2 text-sm text-muted">
@@ -84,11 +89,12 @@ export function BreakView({ s, act }: { s: State; act: (a: Action) => void }) {
   return (
     <>
       <Center>
-        <div className="text-4xl">☕</div>
-        <h2 className="mt-2 text-xl font-bold">{s.position} soru bitti</h2>
+        <div className={SCREEN_ICON}><Coffee className="size-8" aria-hidden="true" /></div>
+        <h2 className="mt-3 text-xl font-bold">{s.position} soru bitti</h2>
         <p className="mt-2">{right} / {s.position} doğru. Kısa bir mola dikkatini toplamana yardımcı olur.</p>
         <p className="mt-2 text-sm text-muted">Sayfayı kapatabilirsin, kaldığın yerden devam eder.</p>
       </Center>
+      {s.tip && <div className="anim-fade-2"><TipCard tip={s.tip} /></div>}
       <BottomBar><Button primary onClick={() => act({ type: "breakContinue", now: Date.now() })}>Devam et</Button></BottomBar>
     </>
   );
@@ -112,7 +118,7 @@ export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
           <div className="mt-1 text-xl font-bold">Bugün kelime günüydü</div>
         )}
       </Center>
-      <div className="anim-fade-2 flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
+      <div className={`anim-fade-2 flex items-center gap-4 p-4 ${CARD}`}>
         <WeekRing done={s.weekDays} />
         <div className="text-sm leading-relaxed">
           {r.reviewTotal > 0 && <>Kelime tekrarı: <b>{r.reviewKnown} / {r.reviewTotal}</b> biliniyor<br /></>}
@@ -120,7 +126,7 @@ export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
         </div>
       </div>
       {r.traps.length > 0 && (
-        <div className="anim-fade-3 mt-3 rounded-2xl border border-border bg-surface p-4">
+        <div className={`anim-fade-3 mt-3 p-4 ${CARD}`}>
           <b>Düştüğün tuzaklar</b>
           <div className="mt-2">{r.traps.map(([t, n]) => <TrapChip key={t} code={t} count={n} />)}</div>
           <p className="mt-2 text-sm text-muted">En sık: <b>{TRAP_NAMES[r.traps[0][0]]}</b>. Bir sonraki oturumda buna dikkat et.</p>
@@ -131,7 +137,7 @@ export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
           <h3 className="mt-6 mb-2 font-semibold">Bu oturumdan aklında kalsın</h3>
           <div className="space-y-2.5">
             {r.wrongRules.map((w) => (
-              <div key={w.number} className="rounded-2xl border border-border bg-surface p-4 text-sm"><b>Soru {w.number}:</b> {w.rule}</div>
+              <div key={w.number} className={`p-4 text-sm ${CARD}`}><b>Soru {w.number}:</b> {w.rule}</div>
             ))}
           </div>
         </>

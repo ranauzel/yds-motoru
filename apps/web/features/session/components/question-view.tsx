@@ -1,20 +1,22 @@
 // Soru: direktif, kök (vurgulu ya da parça parça çeviri), araçlar, şıklar ve cevaptan sonra geri bildirim.
+import { CircleCheck, Lightbulb, Star } from "lucide-react";
 import type { Question } from "@/lib/content/schema";
-import type { Action, AnswerRecord, OptionKey, Ui } from "../session-machine";
-import { TrapChip } from "./ui";
+import type { Action, AnswerRecord, OptionKey, Snapshot, Ui } from "../session-machine";
+import { CARD, TrapChip, TrapWarning } from "./ui";
 
 const DIRECTIVE: Partial<Record<Question["type"], React.ReactNode>> = {
   cumle_tamamlama: <><b className="text-text">Önce bağlacı bul</b>, yönünü belirle (zıtlık / neden / ek / koşul). Sonra zaman ve zamir uyumuna bak.</>,
 };
 
-type Props = { q: Question; answer?: AnswerRecord; ui: Ui; act: (a: Action) => void; readOnly?: boolean };
+type Props = { q: Question; answer?: AnswerRecord; ui: Ui; act: (a: Action) => void; readOnly?: boolean; topTrap?: Snapshot["topTrap"] };
 
-export function QuestionView({ q, answer, ui, act, readOnly }: Props) {
+export function QuestionView({ q, answer, ui, act, readOnly, topTrap }: Props) {
   const done = !!answer;
   return (
     <>
+      {topTrap && <TrapWarning trap={topTrap} />}
       <p className="mt-3 mb-4 text-sm text-muted">{DIRECTIVE[q.type]}</p>
-      <div className="rounded-2xl border border-border bg-surface p-[18px]"><Stem q={q} gloss={ui.gloss} /></div>
+      <div className={`${CARD} p-[18px]`}><Stem q={q} gloss={ui.gloss} /></div>
 
       <div className="my-3 flex flex-wrap gap-2">
         <Chip on={ui.gloss} onClick={() => act({ type: "toggle", tool: "gloss" })}>Parça parça çeviri</Chip>
@@ -29,7 +31,12 @@ export function QuestionView({ q, answer, ui, act, readOnly }: Props) {
           ))}
         </div>
       )}
-      {ui.hint && !done && <div className="mb-3 rounded-xl bg-accent-soft px-4 py-3 text-sm">💡 {q.solution_steps[0]}</div>}
+      {ui.hint && !done && (
+        <div className="mb-3 flex gap-2 rounded-xl bg-accent-soft px-4 py-3 text-sm">
+          <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+          <span>{q.solution_steps[0]}</span>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2.5">
         {q.options.map((o) => {
@@ -42,7 +49,7 @@ export function QuestionView({ q, answer, ui, act, readOnly }: Props) {
               type="button"
               disabled={done || readOnly}
               onClick={() => act({ type: "select", key: o.key as OptionKey })}
-              className={`flex min-h-12 w-full items-start gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left ${look}`}
+              className={`anim-press flex min-h-12 w-full items-start gap-3 rounded-xl border-[1.5px] px-3.5 py-3 text-left transition-colors duration-200 ${look}`}
             >
               <span className="grid size-7 shrink-0 place-items-center rounded-full border border-border text-sm font-bold">{o.key}</span>
               <span className="font-serif text-[17px] leading-relaxed">
@@ -63,7 +70,7 @@ export function QuestionView({ q, answer, ui, act, readOnly }: Props) {
 function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" aria-pressed={on} onClick={onClick}
-      className={`min-h-10 rounded-full border px-4 text-sm ${on ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface"}`}>
+      className={`min-h-12 rounded-full border px-4 text-sm transition-colors duration-150 ${on ? "border-accent bg-accent-soft text-accent" : "border-border bg-surface"}`}>
       {children}
     </button>
   );
@@ -110,10 +117,12 @@ function Feedback({ q, answer }: { q: Question; answer: AnswerRecord }) {
   const chosen = q.options.find((o) => o.key === answer.choice);
   return (
     <div className="mt-4 space-y-2.5">
-      <div className={`rounded-2xl border p-4 ${ok ? "border-ok bg-ok-soft" : "border-warn bg-warn-soft"}`}>
+      <div className={`anim-fade rounded-[20px] border p-4 ${ok ? "border-ok bg-ok-soft" : "border-warn bg-warn-soft"}`}>
         {ok ? (
           <>
-            <h3 className="font-semibold text-ok">✓ Doğru{answer.sure ? "" : " — ve tahminin tuttu"}</h3>
+            <h3 className="flex items-center gap-1.5 font-semibold text-ok">
+              <CircleCheck className="size-5" aria-hidden="true" />Doğru{answer.sure ? "" : " — ve tahminin tuttu"}
+            </h3>
             <p className="mt-1 text-sm">{q.summary}</p>
           </>
         ) : (
@@ -126,14 +135,17 @@ function Feedback({ q, answer }: { q: Question; answer: AnswerRecord }) {
           </>
         )}
       </div>
-      <div className="rounded-2xl border border-border bg-surface p-4 text-sm"><b>⭐ Altın kural:</b> {q.golden_rule}</div>
+      <div className={`${CARD} flex gap-2 p-4 text-sm`}>
+        <Star className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
+        <p><b>Altın kural:</b> {q.golden_rule}</p>
+      </div>
       <Details title="Adım adım çözüm">
         <ol className="list-decimal space-y-1.5 pl-5">{q.solution_steps.map((s, i) => <li key={i}>{s}</li>)}</ol>
         {q.structure && <p className="mt-2 text-muted"><b>Yapı:</b> {q.structure}</p>}
       </Details>
       <Details title="Şıklar neden yanlış?">
         {q.options.map((o) => (
-          <p key={o.key} className="mb-2"><b>{o.key})</b> {o.key === q.answer ? "✅ " : o.traps.map((t) => <TrapChip key={t} code={t} />)} {o.explanation}</p>
+          <p key={o.key} className="mb-2"><b>{o.key})</b> {o.key === q.answer ? <CircleCheck className="inline size-4 align-[-3px] text-ok" aria-label="doğru şık" /> : o.traps.map((t) => <TrapChip key={t} code={t} />)} {o.explanation}</p>
         ))}
       </Details>
       <Details title={`Kelimeler (${q.vocab.length})`}>
@@ -147,8 +159,8 @@ function Feedback({ q, answer }: { q: Question; answer: AnswerRecord }) {
 
 function Details({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <details className="rounded-2xl border border-border bg-surface">
-      <summary className="cursor-pointer px-4 py-3 font-semibold">{title}</summary>
+    <details className={CARD}>
+      <summary className="min-h-12 cursor-pointer px-4 py-3 font-semibold">{title}</summary>
       <div className="px-4 pb-3.5 text-sm">{children}</div>
     </details>
   );

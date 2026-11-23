@@ -1,11 +1,15 @@
 "use client";
 // Pratik oturumunun istemci kabuğu: durum makinesini çalıştırır, yan etkileri kayıt kuyruğuna verir, klavyeyi dinler.
 import Link from "next/link";
+import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { readSoundPref } from "@/features/ui/sound-pref";
 import { advance, markBreakSeen, markWarmDone, recordAnswer, recordWarmup } from "../actions";
+import { celebrate } from "../celebrate";
+import { realFx } from "../fx";
 import { keyToAction } from "../keyboard";
 import { createSaveQueue, type QueueStatus } from "../save-queue";
-import { effectsFor, initState, isSnapshotAhead, reduce, type Action, type Effect, type Snapshot } from "../session-machine";
+import { effectsFor, feedbackFor, initState, isSnapshotAhead, reduce, type Action, type Effect, type Snapshot } from "../session-machine";
 import { QuestionView } from "./question-view";
 import { BreakView, Summary, Warmup, WarmupDone } from "./screens";
 import { BottomBar, Button, ProgressBar } from "./ui";
@@ -22,6 +26,7 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
   const [state, setState] = useState(() => initState(snapshot, Math.random, Date.now()));
   const stateRef = useRef(state);
   const [saveStatus, setSaveStatus] = useState<QueueStatus>("idle");
+  const streak = useRef(0); // üst üste doğru (soru ya da kelime); yanlışta sıfırlanır
 
   const [queue] = useState(() => {
     const id = snapshot.sessionId;
@@ -44,6 +49,14 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
     stateRef.current = next;
     setState(next);
     queue.push(effectsFor(prev, a, next));
+    const fb = feedbackFor(prev, a, next);
+    if (fb) {
+      streak.current = fb === "correct" ? streak.current + 1 : 0;
+      celebrate(fb, {
+        streak: streak.current, sound: readSoundPref(), fx: realFx,
+        reducedMotion: matchMedia("(prefers-reduced-motion: reduce)").matches,
+      });
+    }
   }, [queue]);
 
   // Next sayfayı gizleyip durumunu korur; yeniden açılışta gelen snapshot başka cihazdaki ilerlemeyi
@@ -95,10 +108,10 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
       <>
         <div className="mb-2 flex items-center gap-3 text-sm text-muted">
           <span>{scr.kind === "review" ? "Gözden geçir" : "Soru"} {i + 1} / {n}</span>
-          <ProgressBar value={(scr.kind === "review" ? i + 1 : i) / n} />
+          <ProgressBar value={(scr.kind === "review" ? i + 1 : i) / n} label="Oturum ilerlemesi" />
           <span>No {q.number}</span>
         </div>
-        <QuestionView q={q} answer={answer} ui={s.ui} act={act} readOnly={scr.kind === "review"} />
+        <QuestionView q={q} answer={answer} ui={s.ui} act={act} readOnly={scr.kind === "review"} topTrap={scr.kind === "question" ? s.topTrap : null} />
         <BottomBar>
           {scr.kind === "review" ? (
             <>
@@ -121,7 +134,7 @@ function Flow({ snapshot }: { snapshot: Snapshot }) {
   return (
     <>
       <div className="mb-3 flex items-center">
-        <Link href="/" aria-label="Oturumdan çık" className="-ml-3 grid size-12 place-items-center rounded-full text-xl text-muted">✕</Link>
+        <Link href="/" aria-label="Oturumdan çık" className="-ml-3 grid size-12 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-accent-soft"><X className="size-6" aria-hidden="true" /></Link>
       </div>
       {body}
       {saveStatus === "retrying" && (

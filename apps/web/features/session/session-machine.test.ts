@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "@/lib/content/schema";
 import {
-  effectsFor, initState, isSnapshotAhead, reduce, REVIEW_BLOCK, summarize, warmVocab,
+  effectsFor, feedbackFor, initState, isSnapshotAhead, reduce, REVIEW_BLOCK, summarize, warmVocab,
   type Action, type Snapshot, type State,
 } from "./session-machine";
 
@@ -38,7 +38,8 @@ function questions(): Question[] {
 function snap(over: Partial<Snapshot> = {}): Snapshot {
   return {
     sessionId: "s1", questions: questions(), position: 0, breakSeen: false, warmDone: [],
-    warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, meaningPool: [], ...over,
+    warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, meaningPool: [],
+    topTrap: null, tip: null, ...over,
   };
 }
 
@@ -167,6 +168,28 @@ describe("answering", () => {
   it("next before answering does nothing", () => {
     const s = atQuestion();
     expect(run(s, { type: "next", now: 3_000 }).state).toBe(s);
+  });
+});
+
+describe("feedbackFor", () => {
+  it("feedbackFor: doğru/yanlış cevap ve ısınma seçimi, diğer eylemler null", () => {
+    const s = atQuestion(); // q1 cevabı C
+    const sel = reduce(s, { type: "select", key: "C" });
+    expect(feedbackFor(sel, { type: "submit", sure: true, now: 2 }, reduce(sel, { type: "submit", sure: true, now: 2 }))).toBe("correct");
+    const selB = reduce(s, { type: "select", key: "B" });
+    expect(feedbackFor(selB, { type: "submit", sure: true, now: 2 }, reduce(selB, { type: "submit", sure: true, now: 2 }))).toBe("wrong");
+    expect(feedbackFor(s, { type: "select", key: "C" }, sel)).toBeNull();
+  });
+
+  it("ısınma seçimi: warmAnswers'a eklenen değer; değişmeyen durumda null", () => {
+    const s = initState(snap(), rng, T0);
+    const item = s.warmItems[0][0];
+    const right = item.choices.indexOf(item.tr);
+    const wrong = item.choices.findIndex((c) => c !== item.tr);
+    expect(feedbackFor(s, { type: "warmPick", choiceIndex: right }, reduce(s, { type: "warmPick", choiceIndex: right }))).toBe("correct");
+    expect(feedbackFor(s, { type: "warmPick", choiceIndex: wrong }, reduce(s, { type: "warmPick", choiceIndex: wrong }))).toBe("wrong");
+    const picked = reduce(s, { type: "warmPick", choiceIndex: right });
+    expect(feedbackFor(picked, { type: "warmPick", choiceIndex: wrong }, reduce(picked, { type: "warmPick", choiceIndex: wrong }))).toBeNull();
   });
 });
 
