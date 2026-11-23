@@ -16,6 +16,7 @@ async function main() {
   const { generateQuestions } = await import("../lib/content/generate/generate");
   const { GENERATORS } = await import("../lib/content/generate/prompts");
   const { createGeminiClient } = await import("../lib/content/generate/gemini");
+  const { archiveExisting } = await import("../lib/content/generate/files");
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("GEMINI_API_KEY tanımlı değil (apps/web/.env.local).");
@@ -42,7 +43,10 @@ async function main() {
     await mkdir(path.dirname(outFile), { recursive: true });
     await writeFile(outFile, JSON.stringify(file, null, 2) + "\n", "utf8");
   }
+  // Önceki çalışmanın inceleme raporu her durumda kenara alınır: ezilmez, güncelmiş gibi de kalmaz.
   const reviewFile = path.resolve(process.cwd(), "..", "..", "data", "raw", args.examId, "inceleme.json");
+  const archived = await archiveExisting(reviewFile, new Date());
+  if (archived) console.log(`Önceki inceleme raporu kenara alındı: ${archived}`);
   if (r.review.length) {
     await mkdir(path.dirname(reviewFile), { recursive: true });
     await writeFile(reviewFile, JSON.stringify(r.review, null, 2) + "\n", "utf8");

@@ -101,6 +101,14 @@ describe("generateQuestions", () => {
     expect(calls[1].prompt).toContain(item27.stem);
   });
 
+  it("modele giden şemalarda $schema anahtarı yok, soru numarası 1–80 ile sınırlı", async () => {
+    await run({ analysis: [item27], blind: [{ number: 27, choice: "B" }], answers: "27: B" });
+    for (const c of calls) expect(c.schema).not.toHaveProperty("$schema");
+    const num = (calls[1].schema as { properties: { answers: { items: { properties: { number: { minimum: number; maximum: number } } } } } })
+      .properties.answers.items.properties.number;
+    expect([num.minimum, num.maximum]).toEqual([1, 80]);
+  });
+
   it("model beklenmeyen yapı dönerse fırlatır", async () => {
     await expect(runRaw({ analysisRaw: { foo: 1 }, answers: "27: B" })).rejects.toThrow();
   });

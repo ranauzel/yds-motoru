@@ -12,10 +12,17 @@ export type GenerateResult = { ready: Question[]; review: ReviewItem[]; skipped:
 const ModelQuestion = QuestionBase.omit({ id: true, type: true, answer: true, review: true });
 const AnalysisOutput = z.object({ questions: z.array(ModelQuestion) });
 const AnalysisShape = z.object({ questions: z.array(z.unknown()) });
-const BlindOutput = z.object({ answers: z.array(z.object({ number: z.number().int(), choice: OptionKey })) });
+const BlindOutput = z.object({ answers: z.array(z.object({ number: z.number().int().min(1).max(80), choice: OptionKey })) });
 
-const ANALYSIS_SCHEMA = z.toJSONSchema(AnalysisOutput) as Record<string, unknown>;
-const BLIND_SCHEMA = z.toJSONSchema(BlindOutput) as Record<string, unknown>;
+/** Gemini'nin responseJsonSchema'sı JSON Schema'nın bir alt kümesini destekler: "$schema" meta anahtarı gönderilmez. */
+function modelSchema(schema: z.ZodType): Record<string, unknown> {
+  const { $schema: _meta, ...rest } = z.toJSONSchema(schema) as Record<string, unknown>;
+  void _meta;
+  return rest;
+}
+
+const ANALYSIS_SCHEMA = modelSchema(AnalysisOutput);
+const BLIND_SCHEMA = modelSchema(BlindOutput);
 
 const numberOf = (item: unknown): number | undefined =>
   typeof item === "object" && item !== null && typeof (item as { number?: unknown }).number === "number"
