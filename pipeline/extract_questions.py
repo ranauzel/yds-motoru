@@ -15,6 +15,8 @@ NOISE = [
     re.compile(r"^\d{4}-YDS/\d/English.*$"),
     re.compile(r"^Go on to the next page\.?$"),
     re.compile(r"^TEST OF ENGLISH$"),
+    re.compile(r"^ENGLISH$"),  # sayfa altı başlığı
+    re.compile(r"^\d{1,2}$"),  # sayfa numarası
     re.compile(r"^This test consists of \d+ questions\.?$"),
     re.compile(r"^\d+\s*-\s*\d+\s*:.*$"),  # bölüm yönergesi: "7-16: For these questions ..."
     re.compile(r"^\d+\.\s*-\s*\d+\.\s*sorularda.*$"),  # Türkçe yönerge (2016): "1. - 6. sorularda ..."
