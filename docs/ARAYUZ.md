@@ -206,7 +206,7 @@ FocusShell
 | Oturum durumu | `useReducer` durum makinesi | Akış açık ve test edilebilir olur, ekstra kütüphane gerekmez |
 | API tipleri | `openapi-typescript` ile FastAPI şemasından üretim | Önyüz ve arka yüz tipleri hep senkron kalır |
 | Grafikler | Recharts | Basit, yeterli |
-| Animasyon | Sadece CSS geçişleri | `prefers-reduced-motion`'a saygı |
+| Animasyon | motion ve canvas-confetti | `prefers-reduced-motion`'a saygı |
 | Mobil | PWA (manifest + ana ekrana ekle) | Uygulama mağazası gerekmez, telefonda uygulama gibi açılır |
 | Tema | Açık/koyu, sistem varsayılanı | Gece çalışması için |
 

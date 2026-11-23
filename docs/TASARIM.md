@@ -307,7 +307,7 @@ Amaç bunalmayı azaltmak, baskı yaratmak değil.
 - **Tahmini YDS puanı:** tip bazlı başarıdan kaba bir tahmin (tip ağırlıklarıyla).
 - **Affedici seri (isteğe bağlı):** haftada 5 gün hedefi. 1 gün kaçırınca seri sıfırlanmaz.
 - **Kısa turlar:** 4–5 soruluk bloklar, aralarda kısa nefes.
-- XP ve rozet yok.
+- XP ve rozet yok. Ses, emoji kutlaması ve kilitli günler ise kullanıcının kararıyla eklendi (bkz. görsel yenileme tasarımı).
 
 ---
 
