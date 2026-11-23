@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useTransition, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import { tr } from "react-day-picker/locale";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { todayKey } from "@/features/session/day";
 import { setExamDate } from "../actions";
 
@@ -17,8 +17,11 @@ const fromKey = (key: string) => {
 };
 const longDate = (key: string) => fromKey(key).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
 
-/** Sınav tarihini seçtiren pencere. autoOpen: tarih yoksa ve kullanıcı "Sonra" demediyse kendiliğinden açılır. */
-export function ExamDateDialog({ initial, autoOpen }: { initial: string | null; autoOpen: boolean }) {
+/**
+ * Sınav tarihini seçtiren pencere. autoOpen: tarih yoksa ve kullanıcı "Sonra" demediyse kendiliğinden açılır.
+ * trigger: pencereyi açan öğe (ör. pano kartı); Base UI tıklama ve aria özelliklerini ona ekler.
+ */
+export function ExamDateDialog({ initial, autoOpen, trigger }: { initial: string | null; autoOpen: boolean; trigger?: ReactElement }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(initial);
@@ -56,6 +59,7 @@ export function ExamDateDialog({ initial, autoOpen }: { initial: string | null; 
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {trigger && <DialogTrigger render={trigger} />}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Sınavın ne zaman?</DialogTitle>

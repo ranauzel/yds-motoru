@@ -12,7 +12,7 @@ export function SignOutButton() {
         router.replace("/giris");
         router.refresh();
       }}
-      className="rounded-full border border-border bg-surface px-4 py-2 text-sm"
+      className="min-h-12 rounded-full border border-border bg-surface px-4 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       Çıkış
     </button>
