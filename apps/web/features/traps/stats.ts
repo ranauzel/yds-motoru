@@ -1,4 +1,4 @@
-import type { Question, TrapCode } from "@/lib/content/schema";
+import { TRAP_CODES, type Question, type TrapCode } from "@/lib/content/schema";
 
 export type AttemptRow = { questionId: string; choice: string; correct: boolean; createdAt: Date };
 export type TrapStat = { code: TrapCode; count: number; lastAt: Date };
@@ -28,4 +28,15 @@ export function pickTrapPractice(o: { code: TrapCode; questions: Question[]; fel
   const fell = hits.filter((q) => o.fellIds.has(q.id));
   const rest = hits.filter((q) => !o.fellIds.has(q.id));
   return [...fell, ...rest].slice(0, o.size).map((q) => q.id);
+}
+
+/** Hiç düşülmemiş tuzak kodları, kod sırasıyla. */
+export function untouchedCodes(stats: TrapStat[]): TrapCode[] {
+  const seen = new Set(stats.map((s) => s.code));
+  return TRAP_CODES.filter((c) => !seen.has(c));
+}
+
+/** Rehber metnindeki *vurgu* işaretlerini ayırır: tek sayılı parçalar vurgulu. */
+export function emphasisParts(text: string): { text: string; em: boolean }[] {
+  return text.split("*").map((t, i) => ({ text: t, em: i % 2 === 1 })).filter((p) => p.text);
 }

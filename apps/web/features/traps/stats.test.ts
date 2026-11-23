@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Question, TrapCode } from "@/lib/content/schema";
-import { pickTrapPractice, trapStats } from "./stats";
+import { emphasisParts, pickTrapPractice, trapStats, untouchedCodes } from "./stats";
 
 /** Şemaya uygun küçük soru; doğru şıkta tuzak yok, belirtilmeyen yanlış şıklarda da yok. */
 const q = (id: string, answer: string, trapsByKey: Record<string, TrapCode[]>): Question =>
@@ -28,4 +28,25 @@ describe("pickTrapPractice", () => {
     const list = [q("a", "A", { B: ["T3"] }), q("b", "A", { B: ["T6"] }), q("c", "A", { C: ["T3"] }), q("d", "A", { D: ["T3"] })];
     expect(pickTrapPractice({ code: "T3", questions: list, fellIds: new Set(["d"]), size: 2 })).toEqual(["d", "a"]);
   });
+});
+
+describe("untouchedCodes", () => {
+  it("düşülenleri çıkarır, kod sırasını korur", () => {
+    const d = new Date();
+    const r = untouchedCodes([{ code: "T2", count: 1, lastAt: d }, { code: "T15", count: 3, lastAt: d }]);
+    expect(r).toHaveLength(13);
+    expect(r[0]).toBe("T1");
+    expect(r).not.toContain("T2");
+    expect(r).not.toContain("T15");
+  });
+  it("hiç kayıt yoksa 15 kodun hepsi", () => expect(untouchedCodes([])).toHaveLength(15));
+});
+
+describe("emphasisParts", () => {
+  it("yıldızlı kısımları vurgulu işaretler", () => {
+    expect(emphasisParts("a *b* c")).toEqual([
+      { text: "a ", em: false }, { text: "b", em: true }, { text: " c", em: false },
+    ]);
+  });
+  it("yıldız yoksa tek parça", () => expect(emphasisParts("düz")).toEqual([{ text: "düz", em: false }]));
 });
