@@ -76,7 +76,7 @@ export function ExamDateDialog({ initial, autoOpen, trigger }: { initial: string
             onSelect={(d) => setSelected(d ? toKey(d) : null)}
             disabled={{ before: today }}
             defaultMonth={selected ? fromKey(selected) : today}
-            className="[--cell-size:--spacing(12)]"
+            className="[--cell-size:min(--spacing(12),calc((100vw_-_5rem)/7))]"
           />
         </div>
         {error && <p role="alert" className="text-sm text-destructive">Tarih kaydedilemedi. Başka bir gün seçip tekrar dene.</p>}
