@@ -109,6 +109,13 @@ describe("generateQuestions", () => {
     expect([num.minimum, num.maximum]).toEqual([1, 80]);
   });
 
+  it("analiz şemasında topic, tipin konu kodlarıyla sınırlı (enum)", async () => {
+    await run({ analysis: [item27], blind: [{ number: 27, choice: "B" }], answers: "27: B" });
+    const topic = (calls[0].schema as { properties: { questions: { items: { properties: { topic: { enum?: string[] } } } } } })
+      .properties.questions.items.properties.topic;
+    expect(topic.enum).toEqual(["kosul", "zitlik", "neden_sonuc", "ek", "zaman", "amac", "karsilastirma", "iliskili_yapi"]);
+  });
+
   it("model beklenmeyen yapı dönerse fırlatır", async () => {
     await expect(runRaw({ analysisRaw: { foo: 1 }, answers: "27: B" })).rejects.toThrow();
   });

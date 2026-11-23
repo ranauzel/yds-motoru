@@ -378,6 +378,11 @@ describe("konuya ilk giriş kartı", () => {
     expect(introFor(introState({ seenTopics: undefined }))).toBeNull();
   });
 
+  it("haritada tanımı olmayan konuda kart çıkmaz (boş ekranda kalmasın)", () => {
+    const qs = questions().slice(0, 1).map((q) => ({ ...q, vocab: [], topic: "tanimsiz" }));
+    expect(introFor(initState(snap({ questions: qs, seenTopics: [] }), () => 0, 0))).toBeNull();
+  });
+
   it("cevaplanmış soruda null", () => {
     const s = introState({ answers: { q1: { choice: "C", sure: true, glossUsed: false, hintUsed: false, wordsUsed: false } } });
     expect(introFor({ ...s, position: 0, screen: { kind: "question" } })).toBeNull();

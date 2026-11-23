@@ -84,7 +84,7 @@ KURALLAR
 - "stem" ve şıkların "text" alanları PDF'teki metinle birebir aynı olmalı (boşluk "----" olarak yazılır). Hiçbir kelimeyi değiştirme.
 - "stem_chunks": soru kökünü anlamlı parçalara böl; parçaların "en" alanları boşlukla birleştirilince "stem" metnini birebir vermeli. Bağlacı tag "conj" (label: işlevi, sign: ↔ zıtlık, → neden-sonuç, + ek vb.), gönderge/zamiri tag "ref", boşluğu tag "blank" ile işaretle.
 - "options": tam olarak A, B, C, D, E sırasıyla beş şık. Doğru şıkta "traps" boş dizi; her yanlış şıkta aşağıdaki katalogdan en az bir tuzak kodu.
-- "topic" şunlardan biri: ${TOPIC_MAP.cumle_tamamlama.map((t) => `${t.code} (${t.name})`).join(", ")}.
+- "topic" şunlardan biri: ${TOPIC_MAP.cumle_tamamlama.map((t) => t.code).join(", ")} (yalnızca kod).
 - "difficulty": 1 (kolay) – 3 (zor).
 - "solution_steps": strateji kartındaki adımlara göre 2–5 kısa adım. "golden_rule": tek cümlelik, akılda kalıcı kural.
 - "vocab": öğrencinin bilmeyebileceği kelime ve kalıplar; soruyu anlamak için gerekenler "warmup": true, "context" alanı sorudaki kısa kullanım.

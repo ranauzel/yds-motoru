@@ -1,7 +1,7 @@
 // Pratik oturumunun akışı: saf reducer + yan etki hesabı. React'ten ve sunucudan bağımsız, testli.
 // Davranış referansı: pipeline/build_practice.py (pratik.html). Tasarım: docs/superpowers/specs/2026-11-22-pratik-ekrani-design.md
 import type { Question, TrapCode } from "@/lib/content/schema";
-import { topicKey } from "@/lib/content/topics";
+import { topicDef, topicKey } from "@/lib/content/topics";
 
 export const BREAK_AFTER = 4;   // blok boyutu: mola + kelime ısınması her 4 soruda bir
 export const WARM_MAX = 8;      // bir blok ısınmasında en fazla kaç yeni kelime (oturum ~25 dk'yı aşmasın)
@@ -164,7 +164,7 @@ function isAnswered(s: State): boolean {
  */
 export function introFor(s: State): string | null {
   const q = currentQuestion(s);
-  if (s.screen.kind !== "question" || !q || !s.seenTopics || s.answers[q.id]) return null;
+  if (s.screen.kind !== "question" || !q || !s.seenTopics || s.answers[q.id] || !topicDef(q.type, q.topic)) return null;
   const key = topicKey(q.type, q.topic);
   return s.seenTopics.includes(key) || s.introDone.includes(key) ? null : key;
 }

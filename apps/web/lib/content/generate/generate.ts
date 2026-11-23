@@ -2,6 +2,7 @@
 // Dosya okumaz/yazmaz; komut (scripts/generate-content.ts) ve ileride web sürümü bunu çağırır.
 import { z } from "zod";
 import { OptionKey, Question, QuestionBase } from "../schema";
+import { TOPIC_MAP } from "../topics";
 import type { ModelClient } from "./client";
 import { blindSolvePrompt, GENERATORS } from "./prompts";
 
@@ -10,7 +11,6 @@ export type GenerateResult = { ready: Question[]; review: ReviewItem[]; skipped:
 
 /** Modelin doldurduğu alanlar: id, type, answer ve review'u hat yazar. */
 const ModelQuestion = QuestionBase.omit({ id: true, type: true, answer: true, review: true });
-const AnalysisOutput = z.object({ questions: z.array(ModelQuestion) });
 const AnalysisShape = z.object({ questions: z.array(z.unknown()) });
 const BlindOutput = z.object({ answers: z.array(z.object({ number: z.number().int().min(1).max(80), choice: OptionKey })) });
 
@@ -21,7 +21,13 @@ function modelSchema(schema: z.ZodType): Record<string, unknown> {
   return rest;
 }
 
-const ANALYSIS_SCHEMA = modelSchema(AnalysisOutput);
+/** Analiz şeması tipe göre: topic, o tipin konu kodlarıyla sınırlı (modelin serbest metin yazmasını önler). */
+function analysisSchema(type: Question["type"]): Record<string, unknown> {
+  const codes = TOPIC_MAP[type].map((t) => t.code);
+  if (!codes.length) throw new Error(`Bu soru tipinin konu haritası yok: ${type} (lib/content/topics.ts)`);
+  const topic = z.enum(codes as [string, ...string[]]);
+  return modelSchema(z.object({ questions: z.array(ModelQuestion.extend({ topic })) }));
+}
 const BLIND_SCHEMA = modelSchema(BlindOutput);
 
 const numberOf = (item: unknown): number | undefined =>
@@ -51,7 +57,7 @@ export async function generateQuestions(opts: {
   if (!requested.size) return { ready: [], review: [], skipped };
 
   // 1) Analiz: PDF + istenen numaralar ve doğru cevaplar.
-  const raw = AnalysisShape.safeParse(await client.generateJson({ prompt: gen.analysisPrompt(requested), pdf, schema: ANALYSIS_SCHEMA }));
+  const raw = AnalysisShape.safeParse(await client.generateJson({ prompt: gen.analysisPrompt(requested), pdf, schema: analysisSchema(type) }));
   if (!raw.success) throw new Error(`Model beklenmeyen bir yapı döndürdü (analiz): ${raw.error.message}`);
 
   const byNumber = new Map<number, unknown>();
