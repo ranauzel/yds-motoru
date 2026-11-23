@@ -29,7 +29,7 @@ export function TrapWarning({ trap }: { trap: NonNullable<Snapshot["topTrap"]> }
     <div role="note" className="mt-3 flex gap-2.5 rounded-xl border border-warn/40 bg-warn-soft px-3.5 py-2.5 text-sm">
       <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warn" aria-hidden="true" />
       <p>
-        Dikkat: en sık <b className="text-warn">{trap.name} ({trap.code})</b> tuzağına düşüyorsun.{" "}
+        Dikkat: bu soruda en sık düştüğün <b className="text-warn">{trap.name} ({trap.code})</b> tuzağı var.{" "}
         <span className="text-muted"><Emphasis text={trap.catch} /></span>
       </p>
     </div>

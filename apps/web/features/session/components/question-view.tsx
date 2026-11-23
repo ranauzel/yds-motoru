@@ -2,6 +2,7 @@
 import { CircleCheck, Lightbulb, Star } from "lucide-react";
 import type { Question } from "@/lib/content/schema";
 import { topicDef } from "@/lib/content/topics";
+import { optionPattern, trapWarningFor } from "../option-pattern";
 import type { Action, AnswerRecord, OptionKey, Snapshot, Ui } from "../session-machine";
 import { CARD, TrapChip, TrapWarning } from "./ui";
 
@@ -13,10 +14,12 @@ type Props = { q: Question; answer?: AnswerRecord; ui: Ui; act: (a: Action) => v
 
 export function QuestionView({ q, answer, ui, act, readOnly, topTrap }: Props) {
   const done = !!answer;
+  const pattern = optionPattern(q);
+  const warn = trapWarningFor(q, topTrap ?? null);
   return (
     <>
-      {topTrap && <TrapWarning trap={topTrap} />}
-      <p className="mt-3 mb-4 text-sm text-muted">{DIRECTIVE[q.type]}</p>
+      {warn && <TrapWarning trap={warn} />}
+      <p className="mt-3 mb-4 text-sm text-muted">{pattern ? <b className="text-text">{pattern.directive}</b> : DIRECTIVE[q.type]}</p>
       <div className={`${CARD} p-[18px]`}><Stem q={q} gloss={ui.gloss} /></div>
 
       <div className="my-3 flex flex-wrap gap-2">
@@ -36,7 +39,15 @@ export function QuestionView({ q, answer, ui, act, readOnly, topTrap }: Props) {
         <div className="mb-3 flex gap-2 rounded-xl bg-accent-soft px-4 py-3 text-sm">
           <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
           <div>
-            {q.solution_steps[0]}
+            {pattern && (
+              <div className="mb-2 border-b border-accent/20 pb-2">
+                <b>Şıklardan nasıl gidilir</b>
+                <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+                  {pattern.steps.map((step) => <li key={step}>{step}</li>)}
+                </ol>
+              </div>
+            )}
+            {pattern ? <><b>Bu soruda:</b> {q.solution_steps[0]}</> : q.solution_steps[0]}
             <TopicRecipe q={q} />
           </div>
         </div>
