@@ -5,11 +5,12 @@ import { and, eq, isNull, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getQuestion } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
-import { gradeAnswer } from "@/lib/domain/sm2";
+import { review } from "@/lib/domain/sm2";
 import { requireUser } from "@/lib/session";
 import { AdvanceInput, AnswerInput, SessionIdInput, WarmDoneInput, WarmupInput } from "./inputs";
 import { todayKey } from "./day";
 import { REVIEW_BLOCK, type AnswerRecord } from "./session-machine";
+import { questionReview } from "./rules";
 import { applyAdvance, getOwnedSession, getTodaySession, planToday, upsertReview, WARMUP_GRADE } from "./server";
 
 const { practiceSessions, attempts } = schema;
@@ -80,7 +81,10 @@ export async function recordAnswer(sessionId: string, questionId: string, answer
     glossUsed: a.glossUsed, hintUsed: a.hintUsed, wordsUsed: a.wordsUsed, durationMs: ms,
   }).onConflictDoNothing({ target: [attempts.sessionId, attempts.questionId] }).returning({ id: attempts.id });
 
-  if (inserted.length) await upsertReview(user.id, "question", questionId, gradeAnswer(correct, a.sure), new Date());
+  if (inserted.length) {
+    const now = new Date();
+    await upsertReview(user.id, "question", questionId, (s) => questionReview(s, { correct, ...a }, now), now);
+  }
   return OK;
 }
 
@@ -113,8 +117,11 @@ export async function recordWarmup(sessionId: string, word: string, correct: boo
   }).where(and(byId(sessionId), sql`not (${practiceSessions.warmAnswers} ? ${word}::text)`))
     .returning({ id: practiceSessions.id });
 
-  if (updated.length)
-    await upsertReview(session.user.id, "word", word, correct ? WARMUP_GRADE.correct : WARMUP_GRADE.wrong, new Date());
+  if (updated.length) {
+    const now = new Date();
+    const grade = correct ? WARMUP_GRADE.correct : WARMUP_GRADE.wrong;
+    await upsertReview(session.user.id, "word", word, (s) => review(s, grade, now), now);
+  }
   return OK;
 }
 

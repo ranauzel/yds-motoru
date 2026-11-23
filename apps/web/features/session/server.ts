@@ -4,13 +4,14 @@ import { getAllQuestions, getQuestionsByIds } from "@/lib/content/repo";
 import { TRAP_NAMES } from "@/lib/content/schema";
 import { TRAP_GUIDE } from "@/lib/content/traps";
 import { db, schema } from "@/lib/db";
-import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
+import { newReviewState, type ReviewState } from "@/lib/domain/sm2";
 import { tipOfDay } from "@/features/dashboard/stats";
 import { attemptRows, reviewRows } from "@/features/progress/server";
 import { trapStats } from "@/features/traps/stats";
 import { dayEnd, todayKey, weekDaysDone } from "./day";
 import {
-  canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord,
+  canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, retiredQuestions, vocabByWord,
+  wrongTopicKeys,
 } from "./rules";
 import type { AnswerRecord, OptionKey, Snapshot } from "./session-machine";
 
@@ -34,12 +35,16 @@ export async function getTodaySession(userId: string, day: string): Promise<Prac
 
 /** Bugünün içeriği: zamanı gelen + yeni sorular ve zamanı gelen kelimeler (spec §5.3–5.4). Satır oluşturmaz. */
 export async function planToday(userId: string, now: Date): Promise<{ questionIds: string[]; reviewWords: string[]; dueCount: number }> {
-  const [questions, questionReviews, wordReviews] = await Promise.all([
-    getAllQuestions(userId), reviewRows(userId, "question"), reviewRows(userId, "word"),
+  const [questions, questionReviews, wordReviews, userAttempts] = await Promise.all([
+    getAllQuestions(userId), reviewRows(userId, "question"), reviewRows(userId, "word"), attemptRows(userId),
   ]);
   const dueBefore = dayEnd(now);
+  // Emekli sorular gelmez; yanlış yapılan konulardan yeni sorular öne alınır (spec §5).
+  const topicKey = new Map(questions.map((q) => [q.id, `${q.type}:${q.topic}`]));
   const questionIds = pickDailyQuestions({
     questionIds: questions.map((q) => q.id), reviews: questionReviews, dueBefore, size: DAILY_QUESTIONS, maxDue: MAX_DUE_QUESTIONS,
+    retired: retiredQuestions(userAttempts),
+    boost: { topicKey, keys: wrongTopicKeys(userAttempts, topicKey) },
   });
   const reviewed = new Set(questionReviews.map((r) => r.itemId));
   return {
@@ -116,11 +121,13 @@ export async function loadSnapshot(userId: string, id: string): Promise<
   };
 }
 
-/** review_items satırını SM-2 ile günceller; yoksa yeni durumdan başlatır. */
-export async function upsertReview(userId: string, kind: "word" | "question", itemId: string, grade: Grade, now: Date): Promise<void> {
+/** review_items satırını verilen adımla (SM-2 ya da soru kuralı) günceller; yoksa yeni durumdan başlatır. */
+export async function upsertReview(
+  userId: string, kind: "word" | "question", itemId: string, step: (s: ReviewState) => ReviewState, now: Date,
+): Promise<void> {
   const [row] = await db.select().from(reviewItems)
     .where(and(eq(reviewItems.userId, userId), eq(reviewItems.kind, kind), eq(reviewItems.itemId, itemId))).limit(1);
-  const next = review(row ?? newReviewState(now), grade, now);
+  const next = step(row ?? newReviewState(now));
   const values = { ...next, lastReviewedAt: now };
   await db.insert(reviewItems).values({ userId, kind, itemId, ...values })
     .onConflictDoUpdate({ target: [reviewItems.userId, reviewItems.kind, reviewItems.itemId], set: values });
