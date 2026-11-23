@@ -49,6 +49,14 @@ export function vocabByWord(questions: Question[]): Map<string, Question["vocab"
   return m;
 }
 
+/**
+ * İçerik değişince "yeniden oluştur" yalnızca bugünün bitmemiş oturumu için: geçmiş günün sayfasından bugünü
+ * silmek ya da bitmiş günü (ve haftalık hedefi) geri almak veri kaybı olurdu.
+ */
+export function canRecreate(row: { day: string | null; finishedAt: Date | null }, today: string): boolean {
+  return row.day === today && row.finishedAt === null;
+}
+
 /** Isınma cevabının SM-2 notu. */
 export const WARMUP_GRADE = { correct: 4, wrong: 1 } as const;
 

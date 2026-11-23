@@ -27,8 +27,8 @@ async function Session({ params }: { params: Promise<{ id: string }> }) {
     return (
       <div className="py-10 text-center">
         <p>Bu oturumun bazı soruları artık mevcut değil.</p>
-        {res.daily ? (
-          <form action={recreateTodaySession} className="mt-6">
+        {res.recreatable ? (
+          <form action={recreateTodaySession.bind(null, id)} className="mt-6">
             <button type="submit" className="min-h-12 rounded-xl bg-accent px-6 font-semibold text-white">Bugünün oturumunu yeniden oluştur</button>
           </form>
         ) : (

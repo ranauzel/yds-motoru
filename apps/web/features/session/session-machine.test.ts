@@ -38,7 +38,7 @@ function questions(): Question[] {
 function snap(over: Partial<Snapshot> = {}): Snapshot {
   return {
     sessionId: "s1", questions: questions(), position: 0, breakSeen: false, warmDone: [],
-    warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, ...over,
+    warmAnswers: {}, answers: {}, knownWords: [], reviewVocab: [], weekDays: 0, newLeft: 0, meaningPool: [], ...over,
   };
 }
 
@@ -313,5 +313,14 @@ describe("kelime tekrarı (REVIEW_BLOCK = -1)", () => {
 
   it("summarize tekrar sayısını ve bilinenleri verir", () => {
     expect(summarize({ ...snap({ reviewVocab: RV }), warmAnswers: { w1: true, rw2: false } })).toMatchObject({ reviewTotal: 2, reviewKnown: 1 });
+  });
+});
+
+describe("şık havuzu", () => {
+  it("soru yokken tek tekrar kelimesi de 4 şıkla sorulur (havuz görünür sorulardan)", () => {
+    const s = initState(snap({ questions: [], reviewVocab: [{ word: "tek", tr: "tek-tr" }], meaningPool: ["a", "b", "c", "d", "tek-tr"] }), rng, T0);
+    const item = s.warmItems[REVIEW_BLOCK][0];
+    expect(item.choices).toHaveLength(4);
+    expect(item.choices).toContain("tek-tr");
   });
 });

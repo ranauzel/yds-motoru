@@ -5,7 +5,7 @@ import { db, schema } from "@/lib/db";
 import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
 import { dayEnd, todayKey, weekDaysDone } from "./day";
 import {
-  DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord, type ReviewRow,
+  canRecreate, DAILY_QUESTIONS, DAILY_REVIEW_WORDS, MAX_DUE_QUESTIONS, pickDailyQuestions, pickReviewWords, vocabByWord, type ReviewRow,
 } from "./rules";
 import type { AnswerRecord, OptionKey, Snapshot } from "./session-machine";
 
@@ -59,14 +59,14 @@ export async function finishedDays(userId: string): Promise<string[]> {
 }
 
 export async function loadSnapshot(userId: string, id: string): Promise<
-  { ok: true; snapshot: Snapshot } | { ok: false; reason: "not_found" } | { ok: false; reason: "content_changed"; daily: boolean }
+  { ok: true; snapshot: Snapshot } | { ok: false; reason: "not_found" } | { ok: false; reason: "content_changed"; recreatable: boolean }
 > {
   const row = await getOwnedSession(userId, id);
   if (!row) return { ok: false, reason: "not_found" };
 
   const byId = await getQuestionsByIds(userId, row.questionIds);
   const questions = row.questionIds.map((qid) => byId.get(qid));
-  if (questions.some((q) => !q)) return { ok: false, reason: "content_changed", daily: row.day !== null };
+  if (questions.some((q) => !q)) return { ok: false, reason: "content_changed", recreatable: canRecreate(row, todayKey(new Date())) };
 
   const [rows, known, allQuestions, reviewedQuestions, doneDays] = await Promise.all([
     db.select().from(attempts).where(and(eq(attempts.sessionId, id), eq(attempts.userId, userId))),
@@ -101,6 +101,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
       // Özet yalnızca oturum bitince görünür: bu oturumun günü bitmiş sayılır (henüz yazılmamış olsa da).
       weekDays: weekDaysDone(row.day ? [...doneDays, row.day] : doneDays, todayKey(new Date())),
       newLeft: allQuestions.filter((q) => !reviewed.has(q.id)).length,
+      meaningPool: [...new Set([...vocab.values()].map((v) => v.tr))],
     },
   };
 }

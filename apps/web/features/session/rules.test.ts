@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "@/lib/content/schema";
-import { applyAdvance, pickDailyQuestions, pickReviewWords, vocabByWord, WARMUP_GRADE, type ReviewRow } from "./rules";
+import { applyAdvance, canRecreate, pickDailyQuestions, pickReviewWords, vocabByWord, WARMUP_GRADE, type ReviewRow } from "./rules";
 
 const D = (s: string) => new Date(s);
 const dueBefore = D("2026-11-23T21:00:00Z"); // İstanbul 24 Kasım 00:00
@@ -67,5 +67,14 @@ describe("rules", () => {
 
   it("warmup grades are 4 for right and 1 for wrong", () => {
     expect(WARMUP_GRADE).toEqual({ correct: 4, wrong: 1 });
+  });
+});
+
+describe("canRecreate", () => {
+  it("yalnızca bugünün bitmemiş oturumu yeniden oluşturulabilir", () => {
+    expect(canRecreate({ day: "2026-11-23", finishedAt: null }, "2026-11-23")).toBe(true);
+    expect(canRecreate({ day: "2026-11-22", finishedAt: null }, "2026-11-23")).toBe(false); // geçmiş gün
+    expect(canRecreate({ day: "2026-11-23", finishedAt: new Date() }, "2026-11-23")).toBe(false); // bitmiş
+    expect(canRecreate({ day: null, finishedAt: null }, "2026-11-23")).toBe(false); // eski oturum
   });
 });

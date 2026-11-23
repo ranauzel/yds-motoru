@@ -24,6 +24,7 @@ export type Snapshot = {
   reviewVocab: Question["vocab"];              // bugünün tekrar kelimeleri (sırasıyla, anlamlarıyla)
   weekDays: number;                            // bu hafta oturumu bitirilmiş gün sayısı (affedici seri)
   newLeft: number;                             // havuzda kalan yeni soru sayısı
+  meaningPool: string[];                       // görünür bütün kelime anlamları (az kelimeli tekrarda da 3 yanlış şık için)
 };
 
 export type WarmItem = { word: string; tr: string; context?: string; choices: string[] };
@@ -104,7 +105,7 @@ function shuffle<T>(arr: T[], rng: () => number): T[] {
 
 /** Her blok başı için ısınma öğeleri; şıklar doğru anlam + diğer kelimelerin anlamlarından 3 tane. */
 export function buildWarmItems(s: Snapshot, rng: () => number): Record<number, WarmItem[]> {
-  const allTr = [...new Set([...s.questions.flatMap((q) => q.vocab.map((v) => v.tr)), ...s.reviewVocab.map((v) => v.tr)])];
+  const allTr = [...new Set([...s.questions.flatMap((q) => q.vocab.map((v) => v.tr)), ...s.reviewVocab.map((v) => v.tr), ...s.meaningPool])];
   const toItem = (v: Question["vocab"][number]): WarmItem => ({
     word: v.word, tr: v.tr, context: v.context,
     choices: shuffle([v.tr, ...shuffle(allTr.filter((t) => t !== v.tr), rng).slice(0, 3)], rng),

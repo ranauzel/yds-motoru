@@ -1,7 +1,7 @@
 "use server";
 // Pratik oturumu server action'ları. Hepsi girdiyi doğrular (bkz. inputs.ts), oturum sahibini doğrular
 // ve tekrar gönderime dayanıklıdır.
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { getQuestion } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
@@ -49,11 +49,17 @@ export async function openTodaySession(): Promise<void> {
   redirect(row ? `/oturum/${row.id}` : "/");
 }
 
-/** İçerik değişip bugünün oturumu açılamaz hale gelirse: bugünün satırını silip yeniden açar (SM-2 kayıtları kalır). */
-export async function recreateTodaySession(): Promise<void> {
+/**
+ * İçerik değişip bugünün oturumu açılamaz hale gelirse: o satırı silip yeniden açar (SM-2 kayıtları kalır).
+ * Yalnızca verilen oturum ve yalnızca bugünün bitmemiş oturumuysa silinir (canRecreate ile aynı kural).
+ */
+export async function recreateTodaySession(sessionId: string): Promise<void> {
+  if (!SessionIdInput.safeParse(sessionId).success) redirect("/");
   const user = await requireUser();
-  await db.delete(practiceSessions)
-    .where(and(eq(practiceSessions.userId, user.id), eq(practiceSessions.day, todayKey(new Date()))));
+  await db.delete(practiceSessions).where(and(
+    byId(sessionId), eq(practiceSessions.userId, user.id),
+    eq(practiceSessions.day, todayKey(new Date())), isNull(practiceSessions.finishedAt),
+  ));
   await openTodaySession();
 }
 
