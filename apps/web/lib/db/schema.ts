@@ -17,6 +17,7 @@ export const user = pgTable("user", {
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
   isAnonymous: boolean("is_anonymous").default(false), // misafir (demo) hesabı
+  examDate: date("exam_date", { mode: "string" }), // hedef sınav günü (isteğe bağlı)
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
