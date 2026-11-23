@@ -1,5 +1,5 @@
 // Isınma, mola ve özet ekranları.
-import { startSession } from "../actions";
+import { openTodaySession } from "../actions";
 import { summarize, type Action, type State } from "../session-machine";
 import { BottomBar, Button, Center, ProgressBar, TrapChip } from "./ui";
 import { TRAP_NAMES } from "@/lib/content/schema";
@@ -109,7 +109,7 @@ export function Summary({ s, act }: { s: State; act: (a: Action) => void }) {
       {wrong === 0 && r.total > 0 && <p className="mt-4 text-center">Hiç tuzağa düşmedin. Harika iş! 🎯</p>}
       <BottomBar>
         <Button onClick={() => act({ type: "startReview" })}>Soruları gözden geçir</Button>
-        <form action={startSession} className="flex flex-1"><Button primary type="submit">Yeni oturum</Button></form>
+        <form action={openTodaySession} className="flex flex-1"><Button primary type="submit">Yeni oturum</Button></form>
       </BottomBar>
     </>
   );

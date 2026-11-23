@@ -3,13 +3,14 @@
 // ve tekrar gönderime dayanıklıdır.
 import { and, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { getAllQuestions, getQuestion } from "@/lib/content/repo";
+import { getQuestion } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
 import { gradeAnswer } from "@/lib/domain/sm2";
 import { requireUser } from "@/lib/session";
 import { AdvanceInput, AnswerInput, SessionIdInput, WarmDoneInput, WarmupInput } from "./inputs";
-import type { AnswerRecord } from "./session-machine";
-import { applyAdvance, getOwnedSession, upsertReview, WARMUP_GRADE } from "./server";
+import { todayKey } from "./day";
+import { REVIEW_BLOCK, type AnswerRecord } from "./session-machine";
+import { applyAdvance, getOwnedSession, getTodaySession, planToday, upsertReview, WARMUP_GRADE } from "./server";
 
 const { practiceSessions, attempts } = schema;
 
@@ -28,13 +29,32 @@ async function owned(sessionId: string) {
 
 const byId = (id: string) => eq(practiceSessions.id, id);
 
-export async function startSession(): Promise<void> {
+/**
+ * Bugünün oturumunu açar: varsa ona gider; yoksa içeriği bir kez seçip kaydeder. Günde tek oturum veritabanının
+ * benzersiz indeksiyle garanti: aynı anda iki istek gelirse ikincisi çakışır ve var olan satıra yönlenir.
+ */
+export async function openTodaySession(): Promise<void> {
   const user = await requireUser();
-  const questionIds = (await getAllQuestions(user.id)).map((q) => q.id); // geçici: Task 3 openTodaySession
-  if (!questionIds.length) redirect("/"); // henüz soru aktarılmamış
-  const id = crypto.randomUUID();
-  await db.insert(practiceSessions).values({ id, userId: user.id, questionIds });
-  redirect(`/oturum/${id}`);
+  const now = new Date();
+  const day = todayKey(now);
+  const existing = await getTodaySession(user.id, day);
+  if (existing) redirect(`/oturum/${existing.id}`);
+
+  const plan = await planToday(user.id, now);
+  if (!plan.questionIds.length && !plan.reviewWords.length) redirect("/"); // bugün iş yok (ya da hiç soru yok)
+  await db.insert(practiceSessions)
+    .values({ id: crypto.randomUUID(), userId: user.id, day, questionIds: plan.questionIds, reviewWords: plan.reviewWords })
+    .onConflictDoNothing({ target: [practiceSessions.userId, practiceSessions.day] });
+  const row = await getTodaySession(user.id, day);
+  redirect(row ? `/oturum/${row.id}` : "/");
+}
+
+/** İçerik değişip bugünün oturumu açılamaz hale gelirse: bugünün satırını silip yeniden açar (SM-2 kayıtları kalır). */
+export async function recreateTodaySession(): Promise<void> {
+  const user = await requireUser();
+  await db.delete(practiceSessions)
+    .where(and(eq(practiceSessions.userId, user.id), eq(practiceSessions.day, todayKey(new Date()))));
+  await openTodaySession();
 }
 
 export async function recordAnswer(sessionId: string, questionId: string, answer: AnswerRecord, durationMs: number): Promise<ActionResult> {
@@ -96,10 +116,14 @@ export async function markWarmDone(sessionId: string, block: number): Promise<Ac
   const input = WarmDoneInput.safeParse({ sessionId, block });
   if (!input.success) return INVALID;
 
-  if (!(await owned(sessionId))) return NOT_FOUND;
+  const session = await owned(sessionId);
+  if (!session) return NOT_FOUND;
+  // Sadece kelime olan oturumda (soru yok) son bölüm kelime tekrarıdır: bitince oturum da biter (bir kez yazılır).
+  const finishes = block === REVIEW_BLOCK && session.row.questionIds.length === 0;
   await db.update(practiceSessions).set({
     warmDone: sql`${practiceSessions.warmDone} || jsonb_build_array(${block}::int)`,
     updatedAt: new Date(),
+    ...(finishes ? { finishedAt: sql`coalesce(${practiceSessions.finishedAt}, now())` } : {}),
   }).where(and(byId(sessionId), sql`not (${practiceSessions.warmDone} @> jsonb_build_array(${block}::int))`));
   return OK;
 }

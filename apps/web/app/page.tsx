@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { startSession } from "@/features/session/actions";
-import { latestUnfinishedSession } from "@/features/session/server";
+import { openTodaySession } from "@/features/session/actions";
+import { todayKey } from "@/features/session/day";
+import { getTodaySession } from "@/features/session/server";
 import { getAllQuestions } from "@/lib/content/repo";
 import { requireUser } from "@/lib/session";
 import { guestEnabled } from "@/lib/guest";
@@ -41,7 +42,8 @@ async function Greeting() {
 
 async function SessionSummary() {
   const user = await requireUser();
-  const [questions, open] = await Promise.all([getAllQuestions(user.id), latestUnfinishedSession(user.id)]);
+  const [questions, today] = await Promise.all([getAllQuestions(user.id), getTodaySession(user.id, todayKey(new Date()))]); // geçici: Task 4
+  const open = today && !today.finishedAt ? { id: today.id, position: today.position, total: today.questionIds.length } : null;
   if (!questions.length)
     return (
       <p className="mt-3 text-sm text-muted">
@@ -62,12 +64,12 @@ async function SessionSummary() {
             <Link href={`/oturum/${open.id}`} className={primary}>
               Oturumuna devam et ({open.position}/{open.total})
             </Link>
-            <form action={startSession} className="mt-2 text-center">
+            <form action={openTodaySession} className="mt-2 text-center">
               <button type="submit" className="min-h-12 px-4 text-sm text-muted underline">Yeni oturum başlat</button>
             </form>
           </>
         ) : (
-          <form action={startSession}>
+          <form action={openTodaySession}>
             <button type="submit" className={primary}>Başla</button>
           </form>
         )}

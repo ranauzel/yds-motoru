@@ -30,6 +30,11 @@ describe("markWarmDone", () => {
     for (const block of [NaN, -4, 2.5, "4"])
       expect(WarmDoneInput.safeParse({ sessionId: SID, block }).success).toBe(false);
   });
+
+  it("kelime tekrarı bölümü (-1) kabul edilir, -2 reddedilir", () => {
+    expect(WarmDoneInput.parse({ sessionId: SID, block: -1 }).block).toBe(-1);
+    expect(WarmDoneInput.safeParse({ sessionId: SID, block: -2 }).success).toBe(false);
+  });
 });
 
 describe("recordWarmup", () => {

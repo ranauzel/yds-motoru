@@ -9,7 +9,8 @@ const Count = z.number().int().nonnegative();
 
 export const AdvanceInput = z.object({ sessionId: SessionIdInput, position: Count });
 
-export const WarmDoneInput = z.object({ sessionId: SessionIdInput, block: Count });
+// -1 = oturum başındaki kelime tekrarı bölümü (session-machine REVIEW_BLOCK)
+export const WarmDoneInput = z.object({ sessionId: SessionIdInput, block: z.number().int().min(-1) });
 
 export const WarmupInput = z.object({
   sessionId: SessionIdInput,

@@ -96,10 +96,17 @@ export const practiceSessions = pgTable("practice_sessions", {
   breakSeen: boolean("break_seen").notNull().default(false),
   warmDone: jsonb("warm_done").$type<number[]>().notNull().default([]),
   warmAnswers: jsonb("warm_answers").$type<Record<string, boolean>>().notNull().default({}),
+  // Günlük oturum: İstanbul gününe göre "YYYY-MM-DD" (bu kolondan önceki oturumlarda boş). Günde tek oturum.
+  day: date("day", { mode: "string" }),
+  // Oturum başındaki kelime tekrarı (oturum açılırken seçilir).
+  reviewWords: jsonb("review_words").$type<string[]>().notNull().default([]),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
   finishedAt: timestamp("finished_at", { withTimezone: true }),
-}, (t) => [index("practice_sessions_user_created_idx").on(t.userId, t.createdAt)]);
+}, (t) => [
+  index("practice_sessions_user_created_idx").on(t.userId, t.createdAt),
+  uniqueIndex("practice_sessions_user_day_uq").on(t.userId, t.day),
+]);
 
 /** Her soru cevabı. Analiz ve tuzak istatistikleri buradan hesaplanır. */
 export const attempts = pgTable("attempts", {

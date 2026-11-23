@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { startSession } from "@/features/session/actions";
+import { openTodaySession } from "@/features/session/actions";
 import { PracticeSession } from "@/features/session/components/practice-session";
 import { loadSnapshot } from "@/features/session/server";
 import { requireUser } from "@/lib/session";
@@ -26,7 +26,7 @@ async function Session({ params }: { params: Promise<{ id: string }> }) {
     return (
       <div className="py-10 text-center">
         <p>Bu oturumun bazı soruları artık mevcut değil.</p>
-        <form action={startSession} className="mt-6">
+        <form action={openTodaySession} className="mt-6">
           <button type="submit" className="min-h-12 rounded-xl bg-accent px-6 font-semibold text-white">Yeni oturum</button>
         </form>
       </div>

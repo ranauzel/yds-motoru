@@ -50,6 +50,13 @@
       "when": 1795385109190,
       "tag": "0006_nebulous_hitman",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1795427437303,
+      "tag": "0007_classy_anthem",
+      "breakpoints": true
     }
   ]
 }
