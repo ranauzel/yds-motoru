@@ -5,7 +5,7 @@ import { db, schema } from "@/lib/db";
 import { newReviewState, review, type Grade } from "@/lib/domain/sm2";
 import type { AnswerRecord, OptionKey, Snapshot } from "./session-machine";
 
-export { applyAdvance, pickSessionQuestions, WARMUP_GRADE } from "./rules";
+export { applyAdvance, WARMUP_GRADE } from "./rules";
 
 const { practiceSessions, attempts, reviewItems } = schema;
 export type PracticeSessionRow = typeof practiceSessions.$inferSelect;

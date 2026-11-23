@@ -9,7 +9,7 @@ import { gradeAnswer } from "@/lib/domain/sm2";
 import { requireUser } from "@/lib/session";
 import { AdvanceInput, AnswerInput, SessionIdInput, WarmDoneInput, WarmupInput } from "./inputs";
 import type { AnswerRecord } from "./session-machine";
-import { applyAdvance, getOwnedSession, pickSessionQuestions, upsertReview, WARMUP_GRADE } from "./server";
+import { applyAdvance, getOwnedSession, upsertReview, WARMUP_GRADE } from "./server";
 
 const { practiceSessions, attempts } = schema;
 
@@ -30,7 +30,7 @@ const byId = (id: string) => eq(practiceSessions.id, id);
 
 export async function startSession(): Promise<void> {
   const user = await requireUser();
-  const questionIds = pickSessionQuestions(await getAllQuestions(user.id));
+  const questionIds = (await getAllQuestions(user.id)).map((q) => q.id); // geçici: Task 3 openTodaySession
   if (!questionIds.length) redirect("/"); // henüz soru aktarılmamış
   const id = crypto.randomUUID();
   await db.insert(practiceSessions).values({ id, userId: user.id, questionIds });
