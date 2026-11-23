@@ -11,8 +11,9 @@ import { celebrate } from "../celebrate";
 import { realFx } from "../fx";
 import { keyToAction } from "../keyboard";
 import { createSaveQueue, type QueueStatus } from "../save-queue";
-import { effectsFor, feedbackFor, initState, isSnapshotAhead, reduce, type Action, type Effect, type Snapshot } from "../session-machine";
+import { effectsFor, feedbackFor, initState, introFor, isSnapshotAhead, reduce, type Action, type Effect, type Snapshot } from "../session-machine";
 import { QuestionView } from "./question-view";
+import { TopicIntro } from "./topic-intro";
 import { BreakView, Summary, Warmup, WarmupDone } from "./screens";
 import { BottomBar, Button, ProgressBar } from "./ui";
 
@@ -105,6 +106,7 @@ function Flow({ snapshot, mode }: { snapshot: Snapshot; mode: SessionMode }) {
   else if (scr.kind === "warmupDone") body = <WarmupDone s={s} act={act} />;
   else if (scr.kind === "break") body = <BreakView s={s} act={act} />;
   else if (scr.kind === "summary") body = <Summary s={s} act={act} mode={mode} />;
+  else if (introFor(s)) body = <TopicIntro q={s.questions[s.position]} onContinue={() => act({ type: "dismissIntro", now: Date.now() })} />;
   else {
     const i = scr.kind === "review" ? scr.i : s.position;
     const q = s.questions[i];

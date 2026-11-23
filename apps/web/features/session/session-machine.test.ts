@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "@/lib/content/schema";
 import {
-  effectsFor, feedbackFor, initState, isSnapshotAhead, reduce, REVIEW_BLOCK, summarize, warmVocab,
+  effectsFor, feedbackFor, initState, introFor, isSnapshotAhead, reduce, REVIEW_BLOCK, summarize, warmVocab,
   type Action, type Snapshot, type State,
 } from "./session-machine";
 
@@ -345,5 +345,41 @@ describe("şık havuzu", () => {
     const item = s.warmItems[REVIEW_BLOCK][0];
     expect(item.choices).toHaveLength(4);
     expect(item.choices).toContain("tek-tr");
+  });
+});
+
+describe("konuya ilk giriş kartı", () => {
+  // Isınmasız, soru ekranında başlayan oturum; q1 ve q2 zıtlık, q3 koşul.
+  function introState(over: Partial<Snapshot> = {}): State {
+    const qs = questions().slice(0, 3).map((q, i) => ({ ...q, vocab: [], topic: i < 2 ? "zitlik" : "kosul" }));
+    return initState(snap({ questions: qs, seenTopics: [], ...over }), () => 0, 0);
+  }
+  const answer = (s: State) => reduce(reduce(s, { type: "select", key: "C" }), { type: "submit", sure: true, now: 1 });
+
+  it("görülmemiş konuda introFor anahtarı döner, dismissIntro sonrası null", () => {
+    const s = introState();
+    expect(s.screen.kind).toBe("question");
+    expect(introFor(s)).toBe("cumle_tamamlama:zitlik");
+    const d = reduce(s, { type: "dismissIntro", now: 5 });
+    expect(introFor(d)).toBeNull();
+    expect(d.questionStartedAt).toBe(5);
+  });
+
+  it("aynı konudan ikinci soruda yine null, yeni konuda tekrar çıkar", () => {
+    let s = reduce(introState(), { type: "dismissIntro", now: 0 });
+    s = reduce(answer(s), { type: "next", now: 2 });
+    expect(introFor(s)).toBeNull();
+    s = reduce(answer(s), { type: "next", now: 3 });
+    expect(introFor(s)).toBe("cumle_tamamlama:kosul");
+  });
+
+  it("seenTopics'teki konuda null; seenTopics yoksa (serbest çalışma) hiç çıkmaz", () => {
+    expect(introFor(introState({ seenTopics: ["cumle_tamamlama:zitlik"] }))).toBeNull();
+    expect(introFor(introState({ seenTopics: undefined }))).toBeNull();
+  });
+
+  it("cevaplanmış soruda null", () => {
+    const s = introState({ answers: { q1: { choice: "C", sure: true, glossUsed: false, hintUsed: false, wordsUsed: false } } });
+    expect(introFor({ ...s, position: 0, screen: { kind: "question" } })).toBeNull();
   });
 });

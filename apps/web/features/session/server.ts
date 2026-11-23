@@ -96,6 +96,12 @@ export async function loadSnapshot(userId: string, id: string): Promise<
   const reviewed = new Set(reviewedQuestions.map((r) => r.itemId));
   const top = trapStats(userAttempts, new Map(allQuestions.map((q) => [q.id, q])))[0];
   const wrongIds = new Set(userAttempts.filter((a) => !a.correct).map((a) => a.questionId));
+  // Konuya ilk giriş kartı için: günlük oturumda cevap verilmiş konular (spec §4.3).
+  const allById = new Map(allQuestions.map((q) => [q.id, q]));
+  const seenTopics = [...new Set(userAttempts.flatMap((a) => {
+    const q = a.sessionId ? allById.get(a.questionId) : undefined;
+    return q ? [topicKey(q.type, q.topic)] : [];
+  }))];
   return {
     ok: true,
     snapshot: {
@@ -118,6 +124,7 @@ export async function loadSnapshot(userId: string, id: string): Promise<
         allRules: [...new Set(allQuestions.map((q) => q.golden_rule))],
         today: todayKey(new Date()),
       }),
+      seenTopics,
     },
   };
 }

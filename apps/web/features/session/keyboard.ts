@@ -1,5 +1,5 @@
 // Masaüstü klavye kısayolları (pratik.html ile aynı): tuş → reducer eylemi.
-import type { Action, OptionKey, State } from "./session-machine";
+import { introFor, type Action, type OptionKey, type State } from "./session-machine";
 
 export type KeyInput = { key: string; shiftKey: boolean; ctrlKey: boolean; altKey: boolean; metaKey: boolean; inSummary: boolean };
 
@@ -27,6 +27,7 @@ export function keyToAction(k: KeyInput, s: State, now: number): Action | null {
       if (k.key === "ArrowLeft") return { type: "reviewMove", delta: -1 };
       return letter === "T" ? { type: "toggle", tool: "gloss" } : null;
     case "question": {
+      if (introFor(s)) return k.key === "Enter" ? { type: "dismissIntro", now } : null;
       const q = s.questions[s.position];
       if (q && s.answers[q.id]) {
         if (k.key === "Enter" || k.key === "ArrowRight") return { type: "next", now };

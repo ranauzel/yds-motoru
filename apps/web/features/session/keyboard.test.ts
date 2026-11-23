@@ -63,3 +63,14 @@ describe("keyToAction", () => {
     expect(keyToAction(K("ArrowLeft"), s, NOW)).toEqual({ type: "reviewMove", delta: -1 });
   });
 });
+
+describe("keyToAction: konu tarif kartı", () => {
+  const withIntro = (): State => {
+    const qs = snap().questions.map((x) => ({ ...x, type: "cumle_tamamlama", topic: "zitlik" }) as Question);
+    return initState(snap({ questions: qs, seenTopics: [] }), () => 0.3, 0);
+  };
+  it("kart açıkken Enter kartı geçer, şık tuşları çalışmaz", () => {
+    expect(keyToAction(K("Enter"), withIntro(), NOW)).toEqual({ type: "dismissIntro", now: NOW });
+    expect(keyToAction(K("a"), withIntro(), NOW)).toBeNull();
+  });
+});

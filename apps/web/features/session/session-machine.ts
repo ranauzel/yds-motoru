@@ -1,6 +1,7 @@
 // Pratik oturumunun akışı: saf reducer + yan etki hesabı. React'ten ve sunucudan bağımsız, testli.
 // Davranış referansı: pipeline/build_practice.py (pratik.html). Tasarım: docs/superpowers/specs/2026-11-22-pratik-ekrani-design.md
 import type { Question, TrapCode } from "@/lib/content/schema";
+import { topicKey } from "@/lib/content/topics";
 
 export const BREAK_AFTER = 4;   // blok boyutu: mola + kelime ısınması her 4 soruda bir
 export const WARM_MAX = 8;      // bir blok ısınmasında en fazla kaç yeni kelime (oturum ~25 dk'yı aşmasın)
@@ -27,6 +28,8 @@ export type Snapshot = {
   meaningPool: string[];                       // görünür bütün kelime anlamları (az kelimeli tekrarda da 3 yanlış şık için)
   topTrap: { code: TrapCode; name: string; catch: string } | null; // en sık düşülen tuzak (oturum açılışında)
   tip: string | null;                          // "Biliyor muydun?" (günün ipucu, molada)
+  /** Kullanıcının günlük oturumda daha önce cevapladığı konular (topicKey). Yoksa (serbest çalışma) tarif kartı çıkmaz. */
+  seenTopics?: string[];
 };
 
 export type WarmItem = { word: string; tr: string; context?: string; choices: string[] };
@@ -51,6 +54,8 @@ export type State = Snapshot & {
   screen: Screen;
   ui: Ui;
   questionStartedAt: number;
+  /** Bu oturumda tarif kartı geçilen konular. */
+  introDone: string[];
 };
 
 export type Action =
@@ -64,7 +69,8 @@ export type Action =
   | { type: "warmEnd"; now: number }
   | { type: "breakContinue"; now: number }
   | { type: "startReview" }
-  | { type: "reviewMove"; delta: 1 | -1 };
+  | { type: "reviewMove"; delta: 1 | -1 }
+  | { type: "dismissIntro"; now: number };
 
 export type Effect =
   | { kind: "recordAnswer"; questionId: string; answer: AnswerRecord; durationMs: number }
@@ -141,7 +147,7 @@ function screenAt(s: Pick<State, "questions" | "position" | "breakSeen" | "warmD
 }
 
 export function initState(s: Snapshot, rng: () => number, now: number): State {
-  const base = { ...s, warmItems: buildWarmItems(s, rng), ui: freshUi(), questionStartedAt: now };
+  const base = { ...s, warmItems: buildWarmItems(s, rng), ui: freshUi(), questionStartedAt: now, introDone: [] };
   return { ...base, screen: screenAt(base) };
 }
 
@@ -150,6 +156,17 @@ const currentQuestion = (s: State): Question | undefined => s.questions[s.positi
 function isAnswered(s: State): boolean {
   const q = currentQuestion(s);
   return !!q && !!s.answers[q.id];
+}
+
+/**
+ * Konuya ilk giriş (spec §4.3): soru ekranında, soru cevaplanmamışsa ve konusu ne daha önce görülmüş ne de bu
+ * oturumda kartı geçilmişse konu anahtarı; aksi halde null. Kart sorunun yerine gösterilir.
+ */
+export function introFor(s: State): string | null {
+  const q = currentQuestion(s);
+  if (s.screen.kind !== "question" || !q || !s.seenTopics || s.answers[q.id]) return null;
+  const key = topicKey(q.type, q.topic);
+  return s.seenTopics.includes(key) || s.introDone.includes(key) ? null : key;
 }
 
 export function reduce(s: State, a: Action): State {
@@ -211,6 +228,12 @@ export function reduce(s: State, a: Action): State {
       // Sıradaki ekran durumdan hesaplanır: tekrardan sonra blok 0 ısınması, soru ya da (soru yoksa) özet.
       const ended = { ...s, warmDone, ui: freshUi(), questionStartedAt: a.now ?? s.questionStartedAt };
       return { ...ended, screen: screenAt(ended) };
+    }
+    case "dismissIntro": {
+      const key = introFor(s);
+      if (!key) return s;
+      // Soru süresi kart geçildikten sonra başlar.
+      return { ...s, introDone: [...s.introDone, key], questionStartedAt: a.now };
     }
     case "startReview": {
       if (scr.kind !== "summary" || !s.questions.length) return s;

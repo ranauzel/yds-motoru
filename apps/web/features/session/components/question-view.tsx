@@ -1,6 +1,7 @@
 // Soru: direktif, kök (vurgulu ya da parça parça çeviri), araçlar, şıklar ve cevaptan sonra geri bildirim.
 import { CircleCheck, Lightbulb, Star } from "lucide-react";
 import type { Question } from "@/lib/content/schema";
+import { topicDef } from "@/lib/content/topics";
 import type { Action, AnswerRecord, OptionKey, Snapshot, Ui } from "../session-machine";
 import { CARD, TrapChip, TrapWarning } from "./ui";
 
@@ -34,7 +35,10 @@ export function QuestionView({ q, answer, ui, act, readOnly, topTrap }: Props) {
       {ui.hint && !done && (
         <div className="mb-3 flex gap-2 rounded-xl bg-accent-soft px-4 py-3 text-sm">
           <Lightbulb className="mt-0.5 size-4 shrink-0 text-accent" aria-hidden="true" />
-          <span>{q.solution_steps[0]}</span>
+          <div>
+            {q.solution_steps[0]}
+            <TopicRecipe q={q} />
+          </div>
         </div>
       )}
 
@@ -64,6 +68,20 @@ export function QuestionView({ q, answer, ui, act, readOnly, topTrap }: Props) {
 
       {done && <Feedback q={q} answer={answer} />}
     </>
+  );
+}
+
+/** İpucunda konunun tarifi (spec §4.3); konu haritası yoksa hiçbir şey. */
+function TopicRecipe({ q }: { q: Question }) {
+  const def = topicDef(q.type, q.topic);
+  if (!def) return null;
+  return (
+    <div className="mt-2 border-t border-accent/20 pt-2">
+      <b>Konu: {def.name}</b>
+      <ol className="mt-1 list-decimal space-y-0.5 pl-5">
+        {def.steps.map((step) => <li key={step}>{step}</li>)}
+      </ol>
+    </div>
   );
 }
 
