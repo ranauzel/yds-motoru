@@ -1,7 +1,7 @@
 "use server";
 // Serbest kelime çalışması: cevabı SM-2'ye yazar, günlük oturumu bozmaz (spec §5.6).
 import { and, eq } from "drizzle-orm";
-import { getAllQuestions } from "@/lib/content/repo";
+import { getAllVocab } from "@/lib/content/repo";
 import { db, schema } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { dayEnd, todayKey } from "@/features/session/day";
@@ -22,7 +22,7 @@ export async function recordWordPractice(word: string, correct: boolean): Promis
   const user = await requireUser();
   const now = new Date();
 
-  const [questions, today] = await Promise.all([getAllQuestions(user.id), getTodaySession(user.id, todayKey(now))]);
+  const [questions, today] = await Promise.all([getAllVocab(user.id), getTodaySession(user.id, todayKey(now))]);
   if (!vocabByWord(questions).has(input.data.word)) return INVALID;
   if (todayExcludedWords(questions, today).has(input.data.word)) return INVALID; // bugünün oturumunda (tekrar ya da ısınma) sorulacak
 

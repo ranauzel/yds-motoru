@@ -1,6 +1,6 @@
 // Soruları veritabanından okur (sunucu tarafı). Satırlar import sırasında şemayla doğrulandı.
 // Her kullanıcı yalnızca kendi sorularını görür; hiç sorusu yoksa (ör. misafir) herkese açık örnekleri.
-import { and, asc, eq, inArray, type SQL } from "drizzle-orm";
+import { and, asc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { db, schema } from "@/lib/db";
@@ -27,6 +27,19 @@ export async function getAllQuestions(userId: string): Promise<Question[]> {
     .where(await visibility(userId))
     .orderBy(asc(questions.examId), asc(questions.number));
   return rows.map((r) => r.data);
+}
+
+/**
+ * Yalnızca soruların kelime listeleri (id + vocab), getAllQuestions ile aynı sırada.
+ * Kelimeler sayfası ve kelime çalışması bunu kullanır: tüm içeriğin yaklaşık yedide biri kadar veri.
+ */
+export async function getAllVocab(userId: string): Promise<Pick<Question, "id" | "vocab">[]> {
+  "use cache";
+  cacheLife("minutes");
+  const rows = await db.select({ id: questions.id, vocab: sql<Question["vocab"]>`${questions.data}->'vocab'` }).from(questions)
+    .where(await visibility(userId))
+    .orderBy(asc(questions.examId), asc(questions.number));
+  return rows.map((r) => ({ id: r.id, vocab: r.vocab ?? [] }));
 }
 
 export async function getQuestionsByIds(userId: string, ids: string[]): Promise<Map<string, Question>> {

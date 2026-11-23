@@ -106,7 +106,7 @@ export function pickReviewWords(o: { reviews: ReviewRow[]; known: Set<string>; d
 }
 
 /** Görünür sorulardaki kelimeler: kelime ilk görüldüğü sorudaki girdiyle tutulur. */
-export function vocabByWord(questions: Question[]): Map<string, Question["vocab"][number]> {
+export function vocabByWord(questions: Pick<Question, "id" | "vocab">[]): Map<string, Question["vocab"][number]> {
   const m = new Map<string, Question["vocab"][number]>();
   for (const q of questions) for (const v of q.vocab) if (!m.has(v.word)) m.set(v.word, v);
   return m;

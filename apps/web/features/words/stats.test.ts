@@ -1,11 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { ReviewRow } from "@/features/session/rules";
+import { vocabByWord, type ReviewRow } from "@/features/session/rules";
 import type { Question } from "@/lib/content/schema";
 import { classifyWords, dueLabel, todayExcludedWords, pickWordPractice, shouldRecordWordPractice, type WordRow, type WordStatus } from "./stats";
 
 const dueBefore = new Date("2026-11-23T21:00:00Z");
 const r = (itemId: string, dueAt: string, reps = 1, priority = false): ReviewRow => ({ itemId, dueAt: new Date(dueAt), reps, priority });
 const W = (word: string, status: WordStatus, dueAt: string | null): WordRow => ({ word, tr: word, status, dueAt: dueAt ? new Date(dueAt) : null });
+
+describe("vocabByWord (yalnızca kelime dilimiyle)", () => {
+  it("ilk geçen anlam kalır; sorunun geri kalanı gerekmez", () => {
+    const m = vocabByWord([{ id: "q1", vocab: [{ word: "a", tr: "A1" }] }, { id: "q2", vocab: [{ word: "a", tr: "A2" }, { word: "b", tr: "B" }] }]);
+    expect([...m.entries()].map(([w, v]) => [w, v.tr])).toEqual([["a", "A1"], ["b", "B"]]);
+  });
+});
 
 describe("classifyWords", () => {
   it("sınıflandırma: reps>=2 öğrenildi, kayıtlı<2 tekrarda, kayıtsız yeni; görünmeyen kayıt yok sayılır", () => {
@@ -42,7 +49,8 @@ describe("dueLabel", () => {
 });
 
 describe("todayExcludedWords", () => {
-  const q = (id: string, vocab: Question["vocab"]) => ({ id, vocab }) as Question;
+  // Yalnızca id + kelimeler: Kelimeler sayfası soru bankasının tamamını değil bu dilimi çeker.
+  const q = (id: string, vocab: Question["vocab"]) => ({ id, vocab });
   const questions = [
     q("q1", [{ word: "a", tr: "A", warmup: true }, { word: "b", tr: "B" }]),
     q("q2", [{ word: "c", tr: "C", warmup: true }]),
