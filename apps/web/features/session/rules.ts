@@ -1,5 +1,6 @@
 // Oturum kuralları: veritabanından bağımsız saf yardımcılar (server.ts buradan kullanır, testler buradan import eder).
 import type { Question } from "@/lib/content/schema";
+import { gradeAnswer, review, type ReviewState } from "@/lib/domain/sm2";
 
 /** Günlük oturumun büyüklüğü (spec §5.1). Tek yerde. */
 export const DAILY_QUESTIONS = 10;
@@ -18,19 +19,81 @@ function byUrgency(a: ReviewRow, b: ReviewRow): number {
  * Günün soruları: en fazla maxDue zamanı gelen, kalanı yeni sorular (içerik sırasıyla); yeni yetmezse zamanı
  * gelenlerle tamamlanır. Seçilemeyen zamanı gelenler sonraki günlere kalır (dueAt geçmiş olduğu için yine aday).
  */
-export function pickDailyQuestions(o: { questionIds: string[]; reviews: ReviewRow[]; dueBefore: Date; size: number; maxDue: number }): string[] {
-  const visible = new Set(o.questionIds);
+export function pickDailyQuestions(o: {
+  questionIds: string[]; reviews: ReviewRow[]; dueBefore: Date; size: number; maxDue: number;
+  /** Emekli sorular (bkz. retiredQuestions): hiç seçilmez. */
+  retired: Set<string>;
+  /** Yanlış yapılan konulardan yeni sorular öne alınır (sıra korunur). */
+  boost?: { topicKey: Map<string, string>; keys: Set<string> };
+}): string[] {
+  const visible = new Set(o.questionIds.filter((id) => !o.retired.has(id)));
   const reviewed = new Set(o.reviews.map((r) => r.itemId));
   const due = o.reviews
     .filter((r) => visible.has(r.itemId) && r.dueAt < o.dueBefore)
     .sort(byUrgency)
     .map((r) => r.itemId);
-  const fresh = o.questionIds.filter((id) => !reviewed.has(id));
+  let fresh = o.questionIds.filter((id) => visible.has(id) && !reviewed.has(id));
+  if (o.boost) {
+    const { topicKey, keys } = o.boost;
+    const boosted = (id: string) => keys.has(topicKey.get(id) ?? "");
+    fresh = [...fresh.filter(boosted), ...fresh.filter((id) => !boosted(id))];
+  }
 
   const firstDue = due.slice(0, o.maxDue);
   const newOnes = fresh.slice(0, o.size - firstDue.length);
   const moreDue = due.slice(o.maxDue, o.maxDue + (o.size - firstDue.length - newOnes.length));
   return [...firstDue, ...moreDue, ...newOnes];
+}
+
+/** "Doğru ama temiz değil" cevaptan sonra sorunun bir kez daha geleceği gün sayısı (spec §5). */
+export const CHECK_DAYS = 7;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Günlük oturumdaki bir cevap (attempts satırının kural için gereken kısmı). sessionId null ise günlük değildir. */
+export type DailyAttempt = {
+  sessionId: string | null; questionId: string; correct: boolean; sure: boolean; glossUsed: boolean; hintUsed: boolean; createdAt: Date;
+};
+type Answer = Pick<DailyAttempt, "correct" | "sure" | "glossUsed" | "hintUsed">;
+
+/** Temiz doğru: eminim dendi, çeviri ve ipucu açılmadı. Kelimeler (K) yardım sayılmaz. */
+export function isClean(a: Answer): boolean {
+  return a.correct && a.sure && !a.glossUsed && !a.hintUsed;
+}
+
+/** Soru başına günlük cevaplar, createdAt sırasıyla. */
+function dailyHistory(attempts: DailyAttempt[]): Map<string, DailyAttempt[]> {
+  const m = new Map<string, DailyAttempt[]>();
+  for (const a of attempts) if (a.sessionId !== null) m.set(a.questionId, [...(m.get(a.questionId) ?? []), a]);
+  for (const list of m.values()) list.sort((x, y) => x.createdAt.getTime() - y.createdAt.getTime());
+  return m;
+}
+
+/** Emekli sorular: son günlük cevap doğru ve (temiz ya da bir önceki de doğru). Günlük oturuma bir daha gelmez. */
+export function retiredQuestions(attempts: DailyAttempt[]): Set<string> {
+  const out = new Set<string>();
+  for (const [id, list] of dailyHistory(attempts)) {
+    const last = list[list.length - 1];
+    const prev = list[list.length - 2];
+    if (last.correct && (isClean(last) || prev?.correct)) out.add(id);
+  }
+  return out;
+}
+
+/** Soru cevabından sonraki tekrar durumu: yanlışta SM-2; doğruda CHECK_DAYS gün sonra (temizse zaten emekli). */
+export function questionReview(state: ReviewState, a: Answer, now: Date): ReviewState {
+  if (!a.correct) return review(state, gradeAnswer(false, a.sure), now);
+  const next = review(state, gradeAnswer(true, isClean(a)), now);
+  return { ...next, dueAt: new Date(now.getTime() + CHECK_DAYS * DAY_MS) };
+}
+
+/** Son günlük cevabı yanlış olan soruların konu anahtarları (yeni soru seçiminde öne alınır). */
+export function wrongTopicKeys(attempts: DailyAttempt[], topicKey: Map<string, string>): Set<string> {
+  const out = new Set<string>();
+  for (const [id, list] of dailyHistory(attempts)) {
+    const key = topicKey.get(id);
+    if (key && !list[list.length - 1].correct) out.add(key);
+  }
+  return out;
 }
 
 /** Günün tekrar kelimeleri: zamanı gelenler aynı sırayla; anlamı bilinmeyen (known'da olmayan) kelime atlanır. */

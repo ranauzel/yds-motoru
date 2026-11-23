@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { Question } from "@/lib/content/schema";
-import { applyAdvance, canRecreate, pickDailyQuestions, pickReviewWords, vocabByWord, WARMUP_GRADE, type ReviewRow } from "./rules";
+import { newReviewState } from "@/lib/domain/sm2";
+import {
+  applyAdvance, canRecreate, CHECK_DAYS, pickDailyQuestions, pickReviewWords, questionReview, retiredQuestions, vocabByWord,
+  WARMUP_GRADE, wrongTopicKeys, type DailyAttempt, type ReviewRow,
+} from "./rules";
 
 const D = (s: string) => new Date(s);
 const dueBefore = D("2026-11-23T21:00:00Z"); // İstanbul 24 Kasım 00:00
@@ -10,28 +14,28 @@ describe("pickDailyQuestions", () => {
   it("zamanı gelenler priority > reps > dueAt sırasıyla, sonra yeniler içerik sırasıyla", () => {
     const ids = ["a", "b", "c", "d", "n1", "n2"];
     const reviews = [r("a", "2026-11-20T00:00:00Z", 3), r("b", "2026-11-22T00:00:00Z", 0), r("c", "2026-11-23T10:00:00Z", 0, true), r("d", "2026-11-21T00:00:00Z", 0)];
-    expect(pickDailyQuestions({ questionIds: ids, reviews, dueBefore, size: 10, maxDue: 6 })).toEqual(["c", "d", "b", "a", "n1", "n2"]);
+    expect(pickDailyQuestions({ questionIds: ids, reviews, dueBefore, size: 10, maxDue: 6, retired: new Set() })).toEqual(["c", "d", "b", "a", "n1", "n2"]);
   });
 
   it("gün içinde daha sonra zamanı gelen de bugün sayılır; yarın gelen sayılmaz", () => {
     const reviews = [r("a", "2026-11-23T18:00:00Z"), r("b", "2026-11-23T21:00:00Z")];
-    expect(pickDailyQuestions({ questionIds: ["a", "b"], reviews, dueBefore, size: 10, maxDue: 6 })).toEqual(["a"]);
+    expect(pickDailyQuestions({ questionIds: ["a", "b"], reviews, dueBefore, size: 10, maxDue: 6, retired: new Set() })).toEqual(["a"]);
   });
 
   it("zamanı gelenler maxDue ile sınırlı, kalan yer yenilerle dolar", () => {
     const due = ["d1", "d2", "d3"].map((id) => r(id, "2026-11-20T00:00:00Z"));
-    expect(pickDailyQuestions({ questionIds: ["d1", "d2", "d3", "n1", "n2", "n3"], reviews: due, dueBefore, size: 4, maxDue: 2 }))
+    expect(pickDailyQuestions({ questionIds: ["d1", "d2", "d3", "n1", "n2", "n3"], reviews: due, dueBefore, size: 4, maxDue: 2, retired: new Set() }))
       .toEqual(["d1", "d2", "n1", "n2"]);
   });
 
   it("yeni soru yetmezse boşluk zamanı gelenlerle dolar", () => {
     const due = ["d1", "d2", "d3"].map((id) => r(id, "2026-11-20T00:00:00Z"));
-    expect(pickDailyQuestions({ questionIds: ["d1", "d2", "d3", "n1"], reviews: due, dueBefore, size: 4, maxDue: 2 }))
+    expect(pickDailyQuestions({ questionIds: ["d1", "d2", "d3", "n1"], reviews: due, dueBefore, size: 4, maxDue: 2, retired: new Set() }))
       .toEqual(["d1", "d2", "d3", "n1"]);
   });
 
   it("görünmeyen soruların review kaydı yok sayılır; aday yoksa boş", () => {
-    expect(pickDailyQuestions({ questionIds: ["a"], reviews: [r("gizli", "2026-11-20T00:00:00Z"), r("a", "2026-11-30T00:00:00Z")], dueBefore, size: 10, maxDue: 6 }))
+    expect(pickDailyQuestions({ questionIds: ["a"], reviews: [r("gizli", "2026-11-20T00:00:00Z"), r("a", "2026-11-30T00:00:00Z")], dueBefore, size: 10, maxDue: 6, retired: new Set() }))
       .toEqual([]);
   });
 });
@@ -76,5 +80,75 @@ describe("canRecreate", () => {
     expect(canRecreate({ day: "2026-11-22", finishedAt: null }, "2026-11-23")).toBe(false); // geçmiş gün
     expect(canRecreate({ day: "2026-11-23", finishedAt: new Date() }, "2026-11-23")).toBe(false); // bitmiş
     expect(canRecreate({ day: null, finishedAt: null }, "2026-11-23")).toBe(false); // eski oturum
+  });
+});
+
+const DAY = 24 * 60 * 60 * 1000;
+let tick = 0;
+const att = (questionId: string, o: Partial<DailyAttempt> = {}): DailyAttempt => ({
+  sessionId: "s", questionId, correct: true, sure: true, glossUsed: false, hintUsed: false,
+  createdAt: new Date(Date.UTC(2026, 10, 1) + ++tick * 1000), ...o,
+});
+
+describe("retiredQuestions", () => {
+  it("son günlük cevap temiz doğruysa emekli", () => {
+    expect(retiredQuestions([att("q1")])).toEqual(new Set(["q1"]));
+  });
+  it("doğru ama emin değil → emekli değil", () => {
+    expect(retiredQuestions([att("q1", { sure: false })])).toEqual(new Set());
+  });
+  it("ipucu ya da çeviri açıldıysa temiz sayılmaz", () => {
+    expect(retiredQuestions([att("q1", { hintUsed: true })])).toEqual(new Set());
+    expect(retiredQuestions([att("q1", { glossUsed: true })])).toEqual(new Set());
+  });
+  it("emin değil doğru, sonra yine doğru → emekli", () => {
+    expect(retiredQuestions([att("q1", { sure: false }), att("q1", { sure: false })])).toEqual(new Set(["q1"]));
+  });
+  it("yanlış, sonra emin değil doğru → emekli değil", () => {
+    expect(retiredQuestions([att("q1", { correct: false }), att("q1", { sure: false })])).toEqual(new Set());
+  });
+  it("temiz doğru, sonra yanlış → emekli değil (sıra createdAt'e göre)", () => {
+    const first = att("q1");
+    const second = att("q1", { correct: false });
+    expect(retiredQuestions([second, first])).toEqual(new Set());
+  });
+  it("sessionId null kayıtlar sayılmaz", () => {
+    expect(retiredQuestions([att("q1", { sessionId: null })])).toEqual(new Set());
+  });
+});
+
+describe("questionReview", () => {
+  const now = new Date("2026-11-23T10:00:00Z");
+  it("doğru + emin değil → 7 gün sonra", () => {
+    const s = questionReview(newReviewState(now), { correct: true, sure: false, glossUsed: false, hintUsed: false }, now);
+    expect(CHECK_DAYS).toBe(7);
+    expect(s.dueAt.getTime()).toBe(now.getTime() + 7 * DAY);
+  });
+  it("yanlış → SM-2 (1 gün), eminse öncelikli", () => {
+    const s = questionReview(newReviewState(now), { correct: false, sure: true, glossUsed: false, hintUsed: false }, now);
+    expect(s.dueAt.getTime()).toBe(now.getTime() + DAY);
+    expect(s.priority).toBe(true);
+  });
+});
+
+describe("pickDailyQuestions: emeklilik ve konu önceliği", () => {
+  it("emekli soru zamanı gelse de seçilmez, yeni olsa da seçilmez", () => {
+    const due = ["d1", "d2"].map((id) => r(id, "2026-11-20T00:00:00Z"));
+    expect(pickDailyQuestions({ questionIds: ["d1", "d2", "n1", "n2"], reviews: due, dueBefore, size: 10, maxDue: 6, retired: new Set(["d1", "n1"]) }))
+      .toEqual(["d2", "n2"]);
+  });
+  it("yanlış yapılan konudan yeni sorular öne alınır", () => {
+    const topicKey = new Map([["n1", "cumle_tamamlama:kosul"], ["n2", "cumle_tamamlama:kosul"], ["n3", "cumle_tamamlama:zitlik"]]);
+    expect(pickDailyQuestions({
+      questionIds: ["n1", "n2", "n3"], reviews: [], dueBefore, size: 10, maxDue: 6, retired: new Set(),
+      boost: { topicKey, keys: new Set(["cumle_tamamlama:zitlik"]) },
+    })).toEqual(["n3", "n1", "n2"]);
+  });
+});
+
+describe("wrongTopicKeys", () => {
+  it("son günlük cevabı yanlış olan soruların konuları", () => {
+    const topicKey = new Map([["q1", "t:a"], ["q2", "t:b"]]);
+    expect(wrongTopicKeys([att("q1", { correct: false }), att("q2", { correct: false }), att("q2")], topicKey)).toEqual(new Set(["t:a"]));
   });
 });
